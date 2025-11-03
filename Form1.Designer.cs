@@ -32,6 +32,7 @@
             label1 = new Label();
             txt_input = new TextBox();
             btn_open = new Button();
+            txt_name = new TextBox();
             SuspendLayout();
             // 
             // btn_go
@@ -71,11 +72,20 @@
             btn_open.UseVisualStyleBackColor = true;
             btn_open.Click += btn_open_Click;
             // 
+            // txt_name
+            // 
+            txt_name.Location = new Point(67, 140);
+            txt_name.Name = "txt_name";
+            txt_name.Size = new Size(384, 23);
+            txt_name.TabIndex = 4;
+            txt_name.Text = "cjzc";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(txt_name);
             Controls.Add(btn_open);
             Controls.Add(txt_input);
             Controls.Add(label1);
@@ -92,5 +102,6 @@
         private Label label1;
         private TextBox txt_input;
         private Button btn_open;
+        private TextBox txt_name;
     }
 }
