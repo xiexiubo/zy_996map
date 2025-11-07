@@ -30,10 +30,19 @@ namespace zy_996map
         [JsonPropertyName("matrix")]
         public MapCell[][] Matrix { get; set; } = Array.Empty<MapCell[]>();
 
-       
 
-        [JsonPropertyName("extraData")]
-        public byte[] ExtraData { get; set; } = Array.Empty<byte>();
+
+        
+
+        [JsonPropertyName("stallageArea")]
+        public short[] stallageArea { get; set; } = Array.Empty<short>();
+
+        [JsonPropertyName("guajiArea")]
+        public short[] guajiArea { get; set; } = Array.Empty<short>();
+
+        [JsonPropertyName("safeArea")]
+        public short[] safeArea { get; set; } = Array.Empty<short>();
+
     }
 
     public class MapCell
@@ -64,6 +73,12 @@ namespace zy_996map
 
         [JsonPropertyName("light")]
         public byte Light { get; set; }
+
+        [JsonPropertyName("ext1")]
+        public ushort AreaBk { get; set; }
+
+        [JsonPropertyName("ext2")]
+        public ushort AreaMid { get; set; }
 
         // 计算属性
         [JsonIgnore]
@@ -150,10 +165,9 @@ namespace zy_996map
             {
                 using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 using (var reader = new BinaryReader(fs))
-                {
+                {                   
                     ReadHeader(reader);
                     ReadMapMatrix(reader);
-                    ReadExtraData(reader);
 
                     Console.WriteLine($"成功加载二进制地图: {mapData.Title}");
                     return true;
@@ -170,8 +184,9 @@ namespace zy_996map
         {
             mapData.Width = reader.ReadUInt16();
             mapData.Height = reader.ReadUInt16();
+            mapData.Version = (int)((reader.BaseStream.Length - 52) / (mapData.Width * mapData.Height));
 
-        
+
             byte[] titleBytes = reader.ReadBytes(16);
             mapData.Title = Encoding.ASCII.GetString(titleBytes).TrimEnd('\0');
 
@@ -180,7 +195,7 @@ namespace zy_996map
 
             originalReserved = reader.ReadBytes(24);
             Array.Copy(originalReserved, mapData.Reserved, 24);
-            Console.WriteLine($" Width:{mapData.Width} Height:{mapData.Height}   Title:{mapData.Title}  UpdateDate:{mapData.UpdateDate} originalReserved:{Encoding.ASCII.GetString(originalReserved).TrimEnd('\0')}");
+            Console.WriteLine($" Width:{mapData.Width} Height:{mapData.Height}  mapData.Version:{mapData.Version}  Title:{mapData.Title}  UpdateDate:{mapData.UpdateDate} originalReserved:{Encoding.ASCII.GetString(originalReserved).TrimEnd('\0')}");
         }
 
         private void ReadMapMatrix(BinaryReader reader)
@@ -191,13 +206,13 @@ namespace zy_996map
                 mapData.Matrix[i] = new MapCell[mapData.Width];
             }
 
-            int elementSize = 12;
+            int elementSize = 14;
             long columnSize = elementSize * mapData.Height;
-
+            string s = "";
             for (int x = 0; x < mapData.Width; x++)
             {
                 long position = 52 + (columnSize * x);
-
+              
                 if (position >= reader.BaseStream.Length)
                     break;
 
@@ -206,49 +221,61 @@ namespace zy_996map
                 for (int y = 0; y < mapData.Height; y++)
                 {
                     if (reader.BaseStream.Position + elementSize > reader.BaseStream.Length)
-                        break;
-
+                        break;                    
                     mapData.Matrix[y][x] = ReadMapCell(reader);
+                   
+                    //cell.BkImg = reader.ReadUInt16();
+                    //cell.MidImg = reader.ReadUInt16();
+                    //cell.FrImg = reader.ReadUInt16();
+                    //cell.DoorIndex = reader.ReadByte();
+                    //cell.DoorOffset = reader.ReadByte();
+                    //cell.AniFrame = reader.ReadByte();
+                    //cell.AniTick = reader.ReadByte();
+                    //cell.Area = reader.ReadByte();
+                    //cell.Light = reader.ReadByte();
+
+
+                    s += ((mapData.Matrix[y][x].BkImg)> 32767?1:0).ToString();
+                    if (y == mapData.Height -1) 
+                    {
+                        s += "\n";
+                    }
                 }
             }
-        }
-
-        private void ReadExtraData(BinaryReader reader)
-        {
-            long mapDataEnd = 52 + (12 * mapData.Width * mapData.Height);
-            long extraDataSize = reader.BaseStream.Length - mapDataEnd;
-
-            if (extraDataSize > 0)
+            Console.WriteLine(s);
+            if (true)
             {
-                Console.WriteLine($"发现额外数据: {extraDataSize} 字节");
+                var c = mapData.Matrix[0][0];
+                Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[0][1];
+                Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[0][2];
+                Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
 
-                reader.BaseStream.Seek(mapDataEnd, SeekOrigin.Begin);
-                mapData.ExtraData = reader.ReadBytes((int)extraDataSize);
-
-               
-            }
-            else
-            {
-                mapData.ExtraData = Array.Empty<byte>();
-                Console.WriteLine("没有额外数据");
             }
         }
 
-      
+
+
         private MapCell ReadMapCell(BinaryReader reader)
         {
-            return new MapCell
+            var cell = new MapCell();
+            cell.BkImg = reader.ReadUInt16();
+            cell.MidImg = reader.ReadUInt16();
+            cell.FrImg = reader.ReadUInt16();
+            cell.DoorIndex = reader.ReadByte();
+            cell.DoorOffset = reader.ReadByte();
+            cell.AniFrame = reader.ReadByte();
+            cell.AniTick = reader.ReadByte();
+            cell.Area = reader.ReadByte();
+            cell.Light = reader.ReadByte();
+            if (mapData.Version == 14)
             {
-                BkImg = reader.ReadUInt16(),
-                MidImg = reader.ReadUInt16(),
-                FrImg = reader.ReadUInt16(),
-                DoorIndex = reader.ReadByte(),
-                DoorOffset = reader.ReadByte(),
-                AniFrame = reader.ReadByte(),
-                AniTick = reader.ReadByte(),
-                Area = reader.ReadByte(),
-                Light = reader.ReadByte()
-            };
+                cell.AreaBk = reader.ReadByte();
+                cell.AreaMid = reader.ReadByte();
+            }
+
+            return cell;
         }
 
         public bool SaveAsJson(string jsonFilePath)
@@ -287,7 +314,7 @@ namespace zy_996map
             Console.WriteLine($"\n=== JSON结构信息 ===");
             Console.WriteLine($"地图尺寸: {mapData.Width} x {mapData.Height}");
             Console.WriteLine($"单元格总数: {mapData.Width * mapData.Height}");
-            Console.WriteLine($"额外数据大小: {mapData.ExtraData.Length} 字节");
+            //Console.WriteLine($"额外数据大小: {mapData.ExtraData.Length} 字节");
 
             // 显示一些示例数据
             if (mapData.Matrix.Length > 0)
@@ -359,28 +386,32 @@ namespace zy_996map
             }
         }
 
-        private void WriteExtraData(BinaryWriter writer)
-        {
-            if (mapData.ExtraData.Length > 0)
-            {
-                long mapDataEnd = 52 + (12 * mapData.Width * mapData.Height);
-                writer.BaseStream.Seek(mapDataEnd, SeekOrigin.Begin);
-                writer.Write(mapData.ExtraData);
-                Console.WriteLine($"已写入额外数据: {mapData.ExtraData.Length} 字节");
-            }
-        }
-
+   
+        int ints = 10;
         private void WriteMapCell(BinaryWriter writer, MapCell cell)
         {
+            // if (cell.BkImg != 32768 && cell.BkImg != 0)
+            //    Console.WriteLine($"--cell.BkImg{cell.BkImg} cell.FrImg{cell.FrImg}");
+            //Console.WriteLine($"--cell.BkImg{cell.BkImg} cell.FrImg{cell.FrImg}");
             writer.Write(cell.BkImg);
             writer.Write(cell.MidImg);
-            writer.Write(cell.FrImg);
+            //writer.Write(cell.FrImg);
+            writer.Write((ushort)((cell.BkImg >= 32768 ? 32768 : 0) + ints));
             writer.Write(cell.DoorIndex);
             writer.Write(cell.DoorOffset);
             writer.Write(cell.AniFrame);
             writer.Write(cell.AniTick);
-            writer.Write(cell.Area);
+            //writer.Write(cell.Area);
+            writer.Write((byte)27);
             writer.Write(cell.Light);
+            if (mapData.Version == 14)
+            {
+                writer.Write(cell.AreaBk);
+                writer.Write(cell.AreaMid);
+            }
+            if (ints >= 32767)
+                ints = 0;
+            ints += 10;
         }
 
         public void PrintMapInfo()
@@ -389,7 +420,7 @@ namespace zy_996map
             Console.WriteLine($"标题: {mapData.Title}");
             Console.WriteLine($"尺寸: {mapData.Width} x {mapData.Height}");
             Console.WriteLine($"单元格总数: {mapData.Width * mapData.Height}");
-            Console.WriteLine($"额外数据: {mapData.ExtraData.Length} 字节");
+            //Console.WriteLine($"额外数据: {mapData.ExtraData.Length} 字节");
         }
     }
 
@@ -405,7 +436,8 @@ namespace zy_996map
             // 1. 加载原始二进制地图
             if (parser.LoadBinaryMap(originalMap))
             {
-                parser.PrintMapInfo();
+                //return;
+               // parser.PrintMapInfo();
 
                 // 2. 保存为JSON格式
                 if (parser.SaveAsJson(jsonFile))
@@ -427,7 +459,7 @@ namespace zy_996map
             }
 
             //Console.WriteLine("\n按任意键退出...");
-            Console.ReadKey();
+            //Console.ReadKey();
         }
 
         static void TestJsonReload(string jsonFile)

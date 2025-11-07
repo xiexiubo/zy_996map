@@ -60,6 +60,7 @@
             txt_input.Name = "txt_input";
             txt_input.Size = new Size(384, 23);
             txt_input.TabIndex = 2;
+            txt_input.Text = "             ";
             txt_input.TextChanged += txt_input_TextChanged;
             // 
             // btn_open

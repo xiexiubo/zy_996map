@@ -62,14 +62,24 @@ namespace zy_996map
             Console.WriteLine(this.txt_input.Text);
             var dir = this.txt_input.Text;
             string fileName = txt_name.Text;
-            var filePath = Path.Combine(dir, $"{fileName}.map");
 
-            var parser = new ModernMapParser();
-            string originalMap = filePath;
-            string jsonMap = Path.Combine(dir, $"{fileName}.json");
-            string binaryCopy = Path.Combine(dir, $"{fileName}_copy.map");
+            //var files = Directory.GetFiles(dir, "*.map");
+            //files = new[] { "00.map", "01.map", "02.map", "06.map", "013.map", "36.map" };
+            //foreach ( var file in files ) 
+            {
+            //    fileName = Path.GetFileNameWithoutExtension(file);
+            //    if (fileName == "3") continue;
 
-            LegendOfMirMapParser.main(originalMap,jsonMap,binaryCopy);        
+                var filePath = Path.Combine(dir, $"{fileName}.map");
+
+                var parser = new ModernMapParser();
+                string originalMap = filePath;
+                string jsonMap = Path.Combine(dir, $"{fileName}.json");
+                string binaryCopy = Path.Combine(dir, $"{fileName}_copy.map");
+
+                LegendOfMirMapParser.main(originalMap, jsonMap, binaryCopy);
+            }
+                  
         }       
 
     }
