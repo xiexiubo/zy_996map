@@ -5,5 +5,20 @@
     <Setting Name="txt_input" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="txt_ver" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1.29542.3</Value>
+    </Setting>
+    <Setting Name="path_input" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F:\wa7eDoc\图片\download\bbb\resource\map\156.jpg</Value>
+    </Setting>
+    <Setting Name="id" Type="System.Byte" Scope="User">
+      <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="mapname" Type="System.String" Scope="User">
+      <Value Profile="(Default)">156</Value>
+    </Setting>
+    <Setting Name="path_output" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F:\wa7eDoc\图片\download\bbb\resource_cut\map</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

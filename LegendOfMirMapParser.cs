@@ -28,20 +28,8 @@ namespace zy_996map
         public byte[] Reserved { get; set; } = new byte[24];
 
         [JsonPropertyName("matrix")]
-        public MapCell[][] Matrix { get; set; } = Array.Empty<MapCell[]>();
+        public MapCell[][] Matrix { get; set; } = Array.Empty<MapCell[]>();       
 
-
-
-        
-
-        [JsonPropertyName("stallageArea")]
-        public short[] stallageArea { get; set; } = Array.Empty<short>();
-
-        [JsonPropertyName("guajiArea")]
-        public short[] guajiArea { get; set; } = Array.Empty<short>();
-
-        [JsonPropertyName("safeArea")]
-        public short[] safeArea { get; set; } = Array.Empty<short>();
 
     }
 
@@ -74,10 +62,10 @@ namespace zy_996map
         [JsonPropertyName("light")]
         public byte Light { get; set; }
 
-        [JsonPropertyName("ext1")]
+        [JsonPropertyName("areaBk")]
         public ushort AreaBk { get; set; }
 
-        [JsonPropertyName("ext2")]
+        [JsonPropertyName("awreaMid")]
         public ushort AreaMid { get; set; }
 
         // 计算属性
@@ -95,59 +83,12 @@ namespace zy_996map
 
         [JsonIgnore]
         public ushort FrImageIndex => (ushort)(FrImg & 0x7FFF);
+
+        [JsonIgnore]
+        public ushort MidImageIndex => (ushort)(MidImg);
     }
-
-    // 地图对象（NPC、怪物、物品等）
-    public class MapObject
-    {
-        [JsonPropertyName("x")]
-        public ushort X { get; set; }
-
-        [JsonPropertyName("y")]
-        public ushort Y { get; set; }
-
-        [JsonPropertyName("type")]
-        public ushort Type { get; set; }
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
-
-        [JsonPropertyName("data")]
-        public byte[] Data { get; set; } = Array.Empty<byte>();
-    }
-
-    // 地面砖块
-    public class SmTile
-    {
-        [JsonPropertyName("x")]
-        public ushort X { get; set; }
-
-        [JsonPropertyName("y")]
-        public ushort Y { get; set; }
-
-        [JsonPropertyName("imageIndex")]
-        public ushort ImageIndex { get; set; }
-
-        [JsonPropertyName("data")]
-        public byte[] Data { get; set; } = Array.Empty<byte>();
-    }
-
-    // 砖块
-    public class Tile
-    {
-        [JsonPropertyName("x")]
-        public ushort X { get; set; }
-
-        [JsonPropertyName("y")]
-        public ushort Y { get; set; }
-
-        [JsonPropertyName("imageIndex")]
-        public ushort ImageIndex { get; set; }
-
-        [JsonPropertyName("data")]
-        public byte[] Data { get; set; } = Array.Empty<byte>();
-    }
-
+   
+ 
     public class ModernMapParser
     {
         private MapData mapData = new MapData();
@@ -206,7 +147,7 @@ namespace zy_996map
                 mapData.Matrix[i] = new MapCell[mapData.Width];
             }
 
-            int elementSize = 14;
+            int elementSize = mapData.Version;
             long columnSize = elementSize * mapData.Height;
             string s = "";
             for (int x = 0; x < mapData.Width; x++)
@@ -341,8 +282,6 @@ namespace zy_996map
                 {
                     WriteBinaryHeader(writer);
                     WriteBinaryMapData(writer);
-                    WriteExtraData(writer);
-
                     long fileSize = fs.Length;
                     Console.WriteLine($"成功保存为二进制: {binaryFilePath}");
                     Console.WriteLine($"生成文件大小: {fileSize} 字节");
@@ -371,7 +310,7 @@ namespace zy_996map
 
         private void WriteBinaryMapData(BinaryWriter writer)
         {
-            int elementSize = 12;
+            int elementSize = mapData.Version;
             long columnSize = elementSize * mapData.Height;
 
             for (int x = 0; x < mapData.Width; x++)
@@ -508,4 +447,5 @@ namespace zy_996map
             }
         }
     }
+
 }

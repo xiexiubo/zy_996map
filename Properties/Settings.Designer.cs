@@ -34,5 +34,65 @@ namespace zy_996map.Properties {
                 this["txt_input"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1.29542.3")]
+        public string txt_ver {
+            get {
+                return ((string)(this["txt_ver"]));
+            }
+            set {
+                this["txt_ver"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F:\\wa7eDoc\\图片\\download\\bbb\\resource\\map\\156.jpg")]
+        public string path_input {
+            get {
+                return ((string)(this["path_input"]));
+            }
+            set {
+                this["path_input"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public byte id {
+            get {
+                return ((byte)(this["id"]));
+            }
+            set {
+                this["id"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("156")]
+        public string mapname {
+            get {
+                return ((string)(this["mapname"]));
+            }
+            set {
+                this["mapname"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F:\\wa7eDoc\\图片\\download\\bbb\\resource_cut\\map")]
+        public string path_output {
+            get {
+                return ((string)(this["path_output"]));
+            }
+            set {
+                this["path_output"] = value;
+            }
+        }
     }
 }
