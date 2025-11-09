@@ -28,7 +28,11 @@ namespace zy_996map
         public byte[] Reserved { get; set; } = new byte[24];
 
         [JsonPropertyName("matrix")]
-        public MapCell[][] Matrix { get; set; } = Array.Empty<MapCell[]>();       
+        public MapCell[][] Matrix { get; set; } = Array.Empty<MapCell[]>();
+
+        // 计算属性
+        [JsonIgnore]
+        public byte[] Data { get; set; }
 
 
     }
@@ -150,6 +154,7 @@ namespace zy_996map
             int elementSize = mapData.Version;
             long columnSize = elementSize * mapData.Height;
             string s = "";
+            int z = 0;
             for (int x = 0; x < mapData.Width; x++)
             {
                 long position = 52 + (columnSize * x);
@@ -181,9 +186,15 @@ namespace zy_996map
                     {
                         s += "\n";
                     }
+                    var c = mapData.Matrix[y][x];
+                    if (c.AreaMid > 0&& z<6)
+                    {
+                        Console.WriteLine($"{y},{x}  bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                        z++;
+                    }
                 }
             }
-            Console.WriteLine(s);
+           // Console.WriteLine(s);
             if (true)
             {
                 var c = mapData.Matrix[0][0];

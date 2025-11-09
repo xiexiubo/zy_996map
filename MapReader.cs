@@ -99,7 +99,7 @@ namespace zy_996map
         static int MAP_GRID_HEIGHT = 32;
 
         #region DoneRes_MapData
-        public static async Task DoneRes_MapData(string imgPath,string directory)
+        public static async Task<bool> DoneRes_MapData(string imgPath,string directory)
         {
             string imageName = Path.GetFileNameWithoutExtension(imgPath);
             Dictionary<int, MapData> mapDatas = new Dictionary<int, MapData>();
@@ -117,7 +117,7 @@ namespace zy_996map
                 if (!response.IsSuccessStatusCode)
                 {
                     Form1.AddLog($"没有下载成功 code:{response.StatusCode} {url}");
-                    return;
+                    return false;
                 }
 
                 // 读取响应内容
@@ -131,6 +131,7 @@ namespace zy_996map
                 Form1.AddLog($"-----Map conifg:{config.Items.Count}", Color.Green);
                 if (config == null)
                 {
+                    return false;
                     throw new InvalidOperationException("配置文件内容为空或格式不正确");
                 }
             }
@@ -233,14 +234,16 @@ namespace zy_996map
             {
                 Console.WriteLine($"HTTP请求错误: {ex.Message}");
                 Form1.AddLog($"HTTP请求错误: {ex.Message}", Color.Red);
+                return false;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"发生错误: {ex.Message}");
                 Form1.AddLog($"发生错误6: {ex.Message}", Color.Red);
+                return false;
             }
 
-            if (data == null) return;
+            if (data == null) return false;
 
             // 使用MemoryStream读取数据，尝试不同的字节序
             using (MemoryStream stream = new MemoryStream(data))
@@ -262,17 +265,16 @@ namespace zy_996map
                 {
                     Console.WriteLine("警告：地图数量为负数，可能数据格式有误");
                     // 可以尝试继续处理或者直接返回
-                    return;
+                    return false;
                 }
 
                 // 使用正确的字节序读取剩余数据
                 bool useBigEndian = true; // 根据上面的测试确定
                 Form1.AddLog($"地图数据量：{count}");
-                for (int j = 0; j < count; j++)
+                for (int j = 0; j < count; j++) 
                 {
-                    int key = ReadInt(stream, useBigEndian);
+                    int k = ReadInt(stream, useBigEndian);
                     int dataLength = ReadInt(stream, useBigEndian);
-
                     if (dataLength < 0 || dataLength > stream.Length - stream.Position)
                     {
                         Console.WriteLine($"错误的数据长度: {dataLength}，位置: {stream.Position}");
@@ -287,185 +289,157 @@ namespace zy_996map
                         Console.WriteLine($"读取数据不完整，期望: {dataLength}，实际: {bytesRead}");
                         break;
                     }
-
-                    // 存储地图数据
-                    if (!mapDatas.ContainsKey(key))
+                    Cfg_Map cfg;
+                    if (!config.Items.TryGetValue(k.ToString(), out cfg))
+                    {
+                        Form1.AddLog($"配置表不存在 ID：{k}", Color.Red);
+                        continue;
+                    }
+                    MapData m;
+                    if (!mapDatas.TryGetValue(k,out m)) 
                     {
                         var mapdata = new MapData();
-                        mapDatas.Add(key, mapdata);
-
-                        Cfg_Map cfg;
-                        if (!config.Items.TryGetValue(key.ToString(), out cfg))
-                        {
-                            Form1.AddLog($"配置表不存在 ID：{key}", Color.Red);
-                            continue;
-                        }
-                        int mapWidth = cfg.width;
-                        int mapHeight = cfg.height;
-                        Size size;
-                        if (dicConst.TryGetValue((int)key, out size))
-                        {
-                            mapWidth = size.Width;
-                            mapHeight = size.Height;
-                        }
-                        // 计算网格行列数
-                        int cols = (int)Math.Ceiling(mapWidth / (double)MAP_GRID_WIDTH);
-                        int rows = (int)Math.Ceiling(mapHeight / (double)MAP_GRID_HEIGHT);
-
-                        //if (j < 10) // 只打印前10个避免输出太多
-                        //Console.WriteLine($"解析并存储地图 ID：{key} ({cols},{rows})，数据长度：{dataLength} 字节");
-                        //Form1.AddLog($"解析并存储地图 ID：{key} ({cols},{rows})，数据长度：{dataLength} 字节");
-                        //if (cols * rows > 32767)
-                        //    Form1.AddLog($"({cols} x {rows}={cols * rows}) > 32767", Color.Red);
-                        
-
-                        if (key.ToString() == imageName)
-                        {
-                            Console.WriteLine($"解析并存储地图 ID：{key} ({cols},{rows})，数据长度：{dataLength} 字节");
-                            Form1.AddLog($"解析并存储地图 ID：{key} ({cols},{rows})，数据长度：{dataLength} 字节");
-                            string s = "";
-
-                            int _colCount;
-                            int _rowCount;
-                            int[][] _mapIndex;
-                            Dictionary<int, bool> _coverDic = new Dictionary<int, bool>();
-                            Dictionary<int, bool> _safeDic = new Dictionary<int, bool>();
-                            List<short[]> stallageArea = new List<short[]>();
-                            List<short[]> guajiArea = new List<short[]>();
-                            List<short[]> safeArea = new List<short[]>();
-
-                            using (MemoryStream stream2 = new MemoryStream(da))
-                            using (BinaryReader reader = new BinaryReader(stream2))
-                            {
-                                // 设置小端序
-                                // BinaryReader默认就是小端序，所以不需要特别设置
-
-                                // 跳过第一个int（可能是版本号或其他标识）
-                                reader.ReadInt32();
-
-                                _colCount = cols - 1;
-                                _rowCount = rows - 1;
-
-                                // 定义标志位常量
-                                const byte FLAG_N = 8;  // 1000
-                                const byte FLAG_O = 4;  // 0100  
-                                const byte FLAG_S = 2;  // 0010
-
-                                bool l = true;
-                                byte d = 0;
-                                byte u = 0;
-                                int c = 0;
-
-                                _mapIndex = new int[rows][];
-
-                                // 读取地图网格数据
-                                for (int p = 0; p < rows; p++)
-                                {
-                                    int[] gridRow = new int[cols];
-
-                                    for (int f = 0; f < cols; f++)
-                                    {
-                                        if (l)
-                                        {
-                                            d = reader.ReadByte();
-                                            if (d > 127) // 处理有符号byte转无符号
-                                                d = (byte)(d + 256);
-                                            l = false;
-                                            u = (byte)(d >> 4); // 取高4位
-
-                                        }
-                                        else
-                                        {
-                                            u = (byte)(d & 0x0F); // 取低4位
-                                            l = true;
-                                        }
-
-                                        int a = (f << 16) + p; // 生成唯一索引
-
-                                        // 解析标志位
-                                        if ((u & FLAG_N) > 0)
-                                            gridRow[f] = 1;
-                                        else
-                                            gridRow[f] = 0;
-
-                                        if ((u & FLAG_O) > 0)
-                                            _coverDic[a] = true;
-
-                                        if ((u & FLAG_S) > 0)
-                                            _safeDic[a] = true;
-                                        s += gridRow[f];
-                                        c++;
-                                    }
-                                    s += "\n";
-                                    _mapIndex[p] = gridRow;
-                                    if (p % 100 == 0)
-                                        Form1.AddLog($"----读取二进制格子数据 rows{rows} cols {cols} {_mapIndex.Length}{_mapIndex[0].Length}  {p + 1}/{rows}");
-                                }
-                                var mapPath = Path.Combine(directory, $"{key}.map");
-                                Form1.AddLog($"开始生成 map文件{mapPath}");
-
-                                //切图并设置madata数据
-                                CutBigPix(imgPath, directory,mapdata, _mapIndex);
-                                if (SaveAsBinary(mapPath, mapdata))
-                                {
-                                    Form1.AddLog($"成功生成 map文件{mapPath}");
-                                }
-                                #region 额外数据
-                                //// 读取摊位区域
-                                //short h = reader.ReadInt16();
-                                //if (h > 0)
-                                //{
-                                //    stallageArea = new List<short[]>();
-                                //    for (int m = 0; m < h; m++)
-                                //    {
-                                //        short x = reader.ReadInt16();
-                                //        short y = reader.ReadInt16();
-                                //        stallageArea.Add(new short[] { x, y });
-                                //    }
-                                //}
-
-                                //// 读取挂机区域
-                                //short v = reader.ReadInt16();
-                                //if (v > 0)
-                                //{
-                                //    guajiArea = new List<short[]>();
-                                //    for (int y = 0; y < v; y++)
-                                //    {
-                                //        short x = reader.ReadInt16();
-                                //        short yCoord = reader.ReadInt16();
-                                //        guajiArea.Add(new short[] { x, yCoord });
-                                //    }
-                                //}
-
-                                //// 读取安全区域
-                                //short _ = reader.ReadInt16();
-                                //if (_ > 0)
-                                //{
-                                //    safeArea = new List<short[]>();
-                                //    for (int b = 0; b < _; b++)
-                                //    {
-                                //        short x = reader.ReadInt16();
-                                //        short y = reader.ReadInt16();
-                                //        safeArea.Add(new short[] { x, y });
-                                //    }
-                                //}
-                                #endregion
-
-                                Console.WriteLine($"地图 {key} 解析完成:pos {reader.BaseStream.Position}- length {reader.BaseStream.Length}");
-                            }
-
-                            Console.WriteLine($"地图 {key} 解析完成");
-                            Console.WriteLine($"  - 网格: {_rowCount + 1}x{_colCount + 1}");
-                            Console.Write(s);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"警告：地图 ID {key} 已存在，跳过重复数据");
+                        mapdata.Data = da;
+                        mapDatas.Add(k, mapdata);
                     }
                 }
+                MapData mapData; 
+                int key = int.Parse(imageName);
+                if (mapDatas.TryGetValue(int.Parse(imageName), out mapData))
+                {
+                    byte[] da = mapData.Data;
+                    Cfg_Map cfg;
+                    if (!config.Items.TryGetValue(key.ToString(), out cfg))
+                    {
+                        Form1.AddLog($"配置表不存在 ID：{key}", Color.Red);
+                        return false;
+                    }
+
+                    int mapWidth = cfg.width;
+                    int mapHeight = cfg.height;
+                    Size size;
+                    if (dicConst.TryGetValue((int)key, out size))
+                    {
+                        mapWidth = size.Width;
+                        mapHeight = size.Height;
+                    }
+                    // 计算网格行列数
+                    int cols = (int)Math.Ceiling(mapWidth / (double)MAP_GRID_WIDTH);
+                    int rows = (int)Math.Ceiling(mapHeight / (double)MAP_GRID_HEIGHT);
+
+                    string s = "";
+
+                    int _colCount;
+                    int _rowCount;
+                    int[][] _mapIndex;
+                    Dictionary<int, bool> _coverDic = new Dictionary<int, bool>();
+                    Dictionary<int, bool> _safeDic = new Dictionary<int, bool>();
+                    List<short[]> stallageArea = new List<short[]>();
+                    List<short[]> guajiArea = new List<short[]>();
+                    List<short[]> safeArea = new List<short[]>();
+
+                    using (MemoryStream stream2 = new MemoryStream(da))
+                    using (BinaryReader reader = new BinaryReader(stream2))
+                    {
+                        // 设置小端序
+                        // BinaryReader默认就是小端序，所以不需要特别设置
+
+                        // 跳过第一个int（可能是版本号或其他标识）
+                        reader.ReadInt32();
+
+                        _colCount = cols - 1;
+                        _rowCount = rows - 1;
+
+                        // 定义标志位常量
+                        const byte FLAG_N = 8;  // 1000
+                        const byte FLAG_O = 4;  // 0100  
+                        const byte FLAG_S = 2;  // 0010
+
+                        bool l = true;
+                        byte d = 0;
+                        byte u = 0;
+                        int c = 0;
+
+                        _mapIndex = new int[rows][];
+
+                        // 读取地图网格数据
+                        for (int p = 0; p < rows; p++)
+                        {
+                            int[] gridRow = new int[cols];
+
+                            for (int f = 0; f < cols; f++)
+                            {
+                                if (l)
+                                {
+                                    d = reader.ReadByte();
+                                    if (d > 127) // 处理有符号byte转无符号
+                                        d = (byte)(d + 256);
+                                    l = false;
+                                    u = (byte)(d >> 4); // 取高4位
+
+                                }
+                                else
+                                {
+                                    u = (byte)(d & 0x0F); // 取低4位
+                                    l = true;
+                                }
+
+                                int a = (f << 16) + p; // 生成唯一索引
+
+                                // 解析标志位
+                                if ((u & FLAG_N) > 0)
+                                    gridRow[f] = 1;
+                                else
+                                    gridRow[f] = 0;
+
+                                if ((u & FLAG_O) > 0)
+                                    _coverDic[a] = true;
+
+                                if ((u & FLAG_S) > 0)
+                                    _safeDic[a] = true;
+                                s += gridRow[f];
+                                c++;
+                            }
+                            s += "\n";
+                            _mapIndex[p] = gridRow;
+                            if (p % 100 == 0)
+                                Form1.AddLog($"----读取二进制格子数据 rows{rows} cols {cols} {_mapIndex.Length}{_mapIndex[0].Length}  {p + 1}/{rows}");
+                        }
+                       
+                        //打印阻挡
+                        //Console.Write(s);
+
+                        var mapPath = Path.Combine(directory, $"{key}.map");
+                        Form1.AddLog($"开始生成 map文件{mapPath}");
+
+                        //切图并设置madata数据
+                        if (!CutBigPix(imgPath, directory, mapData, _mapIndex)) 
+                        {
+                            return false;
+                        }
+                        if (SaveAsBinary(mapPath, mapData))
+                        {
+                            Form1.AddLog($"成功生成 map文件{mapPath}");
+                        }
+
+
+                        Console.WriteLine($"地图 {key} 解析完成:pos {reader.BaseStream.Position}- length {reader.BaseStream.Length}");
+
+
+                        Console.WriteLine($"地图 {key} 解析完成");
+                        Console.WriteLine($"  - 网格: {_rowCount + 1}x{_colCount + 1}");
+                     
+                    }
+                }
+                else
+                {
+                    Form1.AddLog($"bin文件中不存在{key}");
+                    return false;
+                }
+
             }
-       //------------------------
+            return true;
+            //------------------------
         }
 
         public static bool SaveAsBinary(string binaryFilePath, MapData mapDate)
@@ -532,15 +506,15 @@ namespace zy_996map
                             //anitick
                             writer.Write((byte)dat.AniTick);
                             //area 
-                            writer.Write((byte)Form1.code_id);
+                            writer.Write((byte)dat.Area);
                             //light
                             writer.Write((byte)dat.Light);
                             if (elementSize == 14)
                             {
                                 //area bk
-                                writer.Write((byte)Form1.code_id);
+                                writer.Write((byte)dat.AreaBk);
                                 //area mid
-                                writer.Write((byte)Form1.code_id);
+                                writer.Write((byte)dat.AreaMid);
                             }
 
                         }
@@ -564,7 +538,7 @@ namespace zy_996map
         /// 切割大图为指定大小的小图，边缘不足部分用黑色填充  返回madata数据
         /// 使用Magick.NET优化大图像处理
         /// </summary>       
-        public static void CutBigPix(string imagePath, string pathOut, MapData mapDate, int[][] mapIndex)
+        public static bool CutBigPix(string imagePath, string pathOut, MapData mapDate, int[][] mapIndex)
         {
             string bigImageName = Path.GetFileNameWithoutExtension(imagePath);
             var cutSize = new Size(48, 32);
@@ -579,15 +553,15 @@ namespace zy_996map
                 {//阻挡设置
                     mapDate.Matrix[i][j] = new MapCell();
                     mapDate.Matrix[i][j].BkImg = (ushort)(mapIndex[i][j] * 32768);
-                    mapDate.Matrix[i][j].FrImg = (ushort)(mapIndex[i][j] * 32768);
+                   // mapDate.Matrix[i][j].FrImg = (ushort)(mapIndex[i][j] * 32768);
                 }
             }
 
             // 检查文件是否存在
             if (!File.Exists(imagePath))
             {
-                Form1.AddLog($"图片文件不存在: {imagePath}", Color.Red);
-                return;
+                Form1.AddLog($"[error]图片文件不存在: {imagePath}", Color.Red);
+                return false;
             }
 
             try
@@ -621,14 +595,17 @@ namespace zy_996map
                     if (tileTotal <= objCount)
                     {
                         mapDate.Version = 12;
+                        Form1.AddLog($"------ 一档 ({tileTotal}/{objCount})----- scale:{scale}", Color.Green);
                     }
                     else if (tileTotal <= objCount + smtileCount)
                     {
                         mapDate.Version = 14;
+                        Form1.AddLog($"------ 二档 ({tileTotal}/{objCount + smtileCount})----- scale:{scale}", Color.Green);
                     }
                     else if (tileTotal <= objCount + smtileCount + tileCount)
                     {
                         mapDate.Version = 14;
+                        Form1.AddLog($"------ 三档 ({tileTotal}/{objCount + smtileCount + tileCount})----- scale:{scale}", Color.Green);
                     }
                     else
                     {
@@ -637,10 +614,16 @@ namespace zy_996map
                         colCount = (int)Math.Ceiling((double)originalWidth / cutSize.Width); // 列数（横向切割数）
                         rowCount = (int)Math.Ceiling((double)originalHeight / cutSize.Height); // 行数（纵向切割数）
                         tileTotal = colCount * rowCount;
-                        if (tileTotal <= objCount + smtileCount + tileCount)
+                        if (tileTotal <= objCount)
+                        {
+                            mapDate.Version = 12;
+                            scale = 2;
+                            Form1.AddLog($"------四档 ({tileTotal}/{objCount + smtileCount + tileCount})----- scale:{scale}", Color.Green);
+                        }else if (tileTotal <= objCount + smtileCount + tileCount)
                         {
                             mapDate.Version = 14;
                             scale = 2;
+                            Form1.AddLog($"------五档 ({tileTotal}/{objCount + smtileCount + tileCount})----- scale:{scale}", Color.Green);
                         }
                         else
                         {
@@ -650,13 +633,15 @@ namespace zy_996map
                             rowCount = (int)Math.Ceiling((double)originalHeight / cutSize.Height); // 行数（纵向切割数）
                             tileTotal = colCount * rowCount;
                             scale = 4;
+                            Form1.AddLog($"------六档 ({tileTotal}/{objCount + smtileCount + tileCount})----- scale:{scale}", Color.Green);
                         }
 
                     }
 
                     Form1.AddLog($"重新切大图 ({colCount},{rowCount})  mapDate.Version:{mapDate.Version} {imagePath}", Color.Green);
-                    int imageIndex = 0; // 小图命名索引（从0开始）
-
+                    int imageIndex = 0;
+                    int imageIndex1 = 0;
+                    int imageIndex2 = 0;
                     // 遍历每个小图的位置
                     for (int row = 0; row < rowCount; row++)
                     {
@@ -692,16 +677,20 @@ namespace zy_996map
 
                                     //obj28  // smtiles123 //tiles147
                                     // 保存小图（路径格式：输出文件夹/索引.png）
-                                    var imageDir = Path.Combine(pathOut, $"{bigImageName}");
+                                    var imageDir = pathOut;//Path.Combine(pathOut, $"{bigImageName}");
                                     var picDir = Path.Combine(imageDir, $"obj{Form1.code_id + 1}");
                                     string savePath = "";
 
                                     // 计算原始索引
                                     int originalIndex = row * mapDate.Width + col * scale;
-                                    int orRow = row;
+                                    int orRow = row * scale;
                                     int orCol = col * scale;
 
-                                    if (imageIndex < objCount)
+                                   int  orImageIndex = orRow * mapDate.Width + orCol;
+                                   //int  imageIndex = row * colCount + col;
+                                   //int  imageIndex = row * colCount + col;
+                                    if (imageIndex < objCount)   //obj
+                                    //if (imageIndex < 100)   //obj
                                     {
                                         int indexP = imageIndex + 1;
                                         string picName = $"obj{Form1.code_id + 1}_{imageIndex.ToString("D6")}.png";
@@ -709,13 +698,20 @@ namespace zy_996map
 
                                         if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
                                         {
-                                            mapDate.Matrix[orRow][orCol].FrImg = (ushort)(mapDate.Matrix[orRow][orCol].FrImg + indexP);
+                                            mapDate.Matrix[orRow][orCol].FrImg = (ushort)(mapDate.Matrix[orRow][orCol].BkImg + indexP);
                                             mapDate.Matrix[orRow][orCol].Area = (byte)Form1.code_id;
                                         }
+                                        if (imageIndex % 1000 == 0)
+                                            Form1.AddLog($"1已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                        imageIndex1++;
                                     }
-                                    else if (imageIndex < objCount + smtileCount)
+                                    else if (imageIndex < objCount + smtileCount) //smtile
+                                    //else if (imageIndex < 200) //smtile
                                     {
-                                        int indexP = imageIndex - objCount + 1;
+                                        if (imageIndex % 1000 == 0)
+                                            Form1.AddLog($"2已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                        
+                                        int indexP = imageIndex - imageIndex1 + 1;
                                         string picName = $"smtiles{Form1.code_id + 1}_{(indexP).ToString("D6")}.png";
                                         picDir = Path.Combine(imageDir, $"smtiles{Form1.code_id + 1}");
                                         savePath = Path.Combine(picDir, picName);
@@ -723,12 +719,17 @@ namespace zy_996map
                                         if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
                                         {
                                             mapDate.Matrix[orRow][orCol].AreaMid = (byte)Form1.code_id;
-                                            mapDate.Matrix[orRow][orCol].MidImg = (ushort)(mapDate.Matrix[orRow][orCol].BkImg + indexP);
+                                            mapDate.Matrix[orRow][orCol].MidImg = (ushort)(indexP);
                                         }
+                                        imageIndex2++;
+                                      
                                     }
-                                    else if (imageIndex < objCount + smtileCount + tileCount)
+                                    //else if (imageIndex < 300) //tile
+                                    else if (imageIndex < objCount + smtileCount + tileCount) //tile
                                     {
-                                        int indexP = imageIndex - objCount - smtileCount + 1;
+                                        if (imageIndex % 1000 == 0)
+                                            Form1.AddLog($"3已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                        int indexP = imageIndex - imageIndex1 - imageIndex2 + 1;
                                         string picName = $"tiles{Form1.code_id + 1}_{(indexP).ToString("D6")}.png";
                                         picDir = Path.Combine(imageDir, $"tiles{Form1.code_id + 1}");
                                         savePath = Path.Combine(picDir, picName);
@@ -739,6 +740,12 @@ namespace zy_996map
                                             mapDate.Matrix[orRow][orCol].AreaBk = (byte)Form1.code_id;
                                         }
                                     }
+                                    else  
+                                    {
+                                        Form1.AddLog($"[error] 4已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图", Color.Green);
+                                        //continue;
+                                        return false;
+                                    }
 
                                     // 创建输出文件夹（若不存在）
                                     if (!Directory.Exists(picDir))
@@ -747,25 +754,27 @@ namespace zy_996map
                                     }
 
                                     // 保存图像
-                                    smallImage.Write(savePath,MagickFormat.Png);
-
-                                    imageIndex++; // 索引自增
+                                    // if (orImageIndex >= objCount)
+                                    smallImage.Write(savePath, MagickFormat.Png24);
 
                                     // 每处理100个小图输出一次进度
-                                    if (imageIndex % 100 == 0)
+                                    //if (imageIndex % 1000 == 0)
                                     {
-                                        Form1.AddLog($"已处理 {imageIndex}/{tileTotal} 个小图", Color.Green);
+                                        //Form1.AddLog($"已处理阻挡格{orImageIndex}/{mapDate.Width* mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
                                     }
+                                    //Form1.AddLog($"图像切割完成，共生成 {imageIndex} 个小图", Color.Green);
                                 }
                             }
                             catch (Exception ex)
                             {
                                 Form1.AddLog($"处理小图时出错 (行: {row}, 列: {col}): {ex.Message}", Color.Red);
+                                return false;
                             }
+                            imageIndex++;
                         }
                     }
 
-                    Form1.AddLog($"图像切割完成，共生成 {imageIndex} 个小图", Color.Green);
+                   
                 }
             }
             catch (Exception ex)
@@ -774,7 +783,9 @@ namespace zy_996map
                 // 记录详细的错误信息到日志文件
                 string errorLogPath = Path.Combine(pathOut, "error.log");
                 File.AppendAllText(errorLogPath, $"[{DateTime.Now}] 图像处理错误: {ex.ToString()}\n");
+                return false;
             }
+            return true;
         }
 
         // 辅助方法：读取short，支持大端序和小端序

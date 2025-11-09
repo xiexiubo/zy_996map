@@ -57,6 +57,7 @@
             btn_goMap = new Button();
             label10 = new Label();
             lb_log = new Label();
+            btn_all = new Button();
             groupTest.SuspendLayout();
             group_map.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -103,7 +104,7 @@
             // 
             // txt_name
             // 
-            txt_name.Location = new Point(71, 22);
+            txt_name.Location = new Point(75, 46);
             txt_name.Name = "txt_name";
             txt_name.Size = new Size(384, 23);
             txt_name.TabIndex = 4;
@@ -123,12 +124,11 @@
             groupTest.TabIndex = 5;
             groupTest.TabStop = false;
             groupTest.Text = "测试";
-            groupTest.Visible = false;
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(11, 27);
+            label2.Location = new Point(15, 51);
             label2.Name = "label2";
             label2.Size = new Size(56, 17);
             label2.TabIndex = 5;
@@ -336,7 +336,7 @@
             btn_goMap.Anchor = AnchorStyles.Top;
             btn_goMap.Location = new Point(402, 334);
             btn_goMap.Name = "btn_goMap";
-            btn_goMap.Size = new Size(368, 51);
+            btn_goMap.Size = new Size(226, 51);
             btn_goMap.TabIndex = 16;
             btn_goMap.Text = "开始";
             btn_goMap.UseVisualStyleBackColor = true;
@@ -359,11 +359,23 @@
             lb_log.Size = new Size(0, 17);
             lb_log.TabIndex = 18;
             // 
+            // btn_all
+            // 
+            btn_all.Anchor = AnchorStyles.Top;
+            btn_all.Location = new Point(645, 334);
+            btn_all.Name = "btn_all";
+            btn_all.Size = new Size(133, 51);
+            btn_all.TabIndex = 19;
+            btn_all.Text = "全搞(搜同目录)";
+            btn_all.UseVisualStyleBackColor = true;
+            btn_all.Click += btn_all_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 410);
+            Controls.Add(btn_all);
             Controls.Add(lb_log);
             Controls.Add(label10);
             Controls.Add(btn_goMap);
@@ -414,5 +426,6 @@
         private Label label10;
         private Label lb_log;
         private NumericUpDown num_id;
+        private Button btn_all;
     }
 }

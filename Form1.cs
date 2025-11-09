@@ -156,7 +156,7 @@ namespace zy_996map
         private void txt_input_image_TextChanged(object sender, EventArgs e)
         {
             var p = this.txt_input_image.Text;
-            if (string.IsNullOrEmpty(this.txt_output.Text))
+            if (string.IsNullOrEmpty(Settings.Default.path_output))
             {
                 this.txt_output.Text = Path.GetDirectoryName(p).Replace("resource", "resource_cut");
             }
@@ -215,7 +215,7 @@ namespace zy_996map
                 Arguments = $"\"{this.txt_output.Text}\"", // 使用引号包裹路径，处理包含空格的路径
                 UseShellExecute = true
             });
-
+        
             AddLog("dfdfdf2");
             await Task.Delay(1000);
             AddLog("dfdfdf3");
@@ -231,7 +231,30 @@ namespace zy_996map
             AddLog("dfdfdf8");
         }
 
-      
+        private async void btn_all_Click(object sender, EventArgs e)
+        {
+            var step9Start = DateTime.Now;
+            var files = Directory.GetFiles(Path.GetDirectoryName(this.txt_input_image.Text), "*.jpg", SearchOption.TopDirectoryOnly);
+           
+            int i= 0;
+            foreach (var path in files)
+            {
+                this.num_id.Value = (byte)i;
+                bool b = await Task.Run(() => MapReader.DoneRes_MapData(path, this.txt_output.Text));
+                if (b)
+                    i++;
+            }
+            var step9End = DateTime.Now;
+            AddLog($"结束 解读生成.map，耗时：{(step9End - step9Start).TotalMinutes:F2}分 成功{i+1}个图", Color.Green);
+            
+            // 启动资源管理器并指定目录
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{this.txt_output.Text}\"", // 使用引号包裹路径，处理包含空格的路径
+                UseShellExecute = true
+            });
+        }
     }
 }
 
