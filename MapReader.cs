@@ -102,7 +102,11 @@ namespace zy_996map
         public static async Task<bool> DoneRes_MapData(string imgPath,string directory)
         {
             string imageName = Path.GetFileNameWithoutExtension(imgPath);
-            var mapPath = Path.Combine(directory, $"{imageName}.map");
+            var mapPath = Path.Combine(directory, imageName, $"{imageName}.map"); 
+            if (Form1.isDebuge) 
+            {
+                mapPath = Path.Combine(directory, $"{imageName}.map");
+            }
             if (File.Exists(mapPath)) 
             {
                 Form1.AddLog($"已经存在的.map文件，跳过{mapPath}");

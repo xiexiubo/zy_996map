@@ -221,8 +221,6 @@
             // ck_pic
             // 
             ck_pic.AutoSize = true;
-            ck_pic.Checked = true;
-            ck_pic.CheckState = CheckState.Checked;
             ck_pic.Location = new Point(83, 29);
             ck_pic.Name = "ck_pic";
             ck_pic.Size = new Size(111, 21);
