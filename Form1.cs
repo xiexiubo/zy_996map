@@ -17,6 +17,7 @@ namespace zy_996map
         public static Form1 Instance;
         public static string Txt_ver { get { return Instance.txt_ver.Text; } }
         public static byte code_id { get { return (byte)(Instance.num_id.Value - 1); } }
+        public static bool isDebuge { get { return Instance.ck_pic.Checked; } }
         // 帧循环定时器
         static private Timer _frameTimer;
         public Form1()
@@ -236,16 +237,17 @@ namespace zy_996map
             var step9Start = DateTime.Now;
             var files = Directory.GetFiles(Path.GetDirectoryName(this.txt_input_image.Text), "*.jpg", SearchOption.TopDirectoryOnly);
            
-            int i= 0;
+            int i= 1;
             foreach (var path in files)
             {
+                AddLog($"-----------------{i}开始解读生成 {path}----------------------", Color.Green);
                 this.num_id.Value = (byte)i;
                 bool b = await Task.Run(() => MapReader.DoneRes_MapData(path, this.txt_output.Text));
                 if (b)
                     i++;
             }
             var step9End = DateTime.Now;
-            AddLog($"结束 解读生成.map，耗时：{(step9End - step9Start).TotalMinutes:F2}分 成功{i+1}个图", Color.Green);
+            AddLog($"结束 解读生成.map，耗时：{(step9End - step9Start).TotalMinutes:F2}分 成功{i}个图", Color.Green);
             
             // 启动资源管理器并指定目录
             Process.Start(new ProcessStartInfo

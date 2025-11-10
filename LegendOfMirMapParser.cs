@@ -203,6 +203,12 @@ namespace zy_996map
                 Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
                 c = mapData.Matrix[0][2];
                 Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[35][26];
+                Console.WriteLine($"{35},{26} bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[32][32];
+                Console.WriteLine($"{32},{32} bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[163][1];
+                Console.WriteLine($"{163},{32} bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
 
             }
         }

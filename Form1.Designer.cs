@@ -42,6 +42,7 @@
             txt_ver = new TextBox();
             lb_version = new Label();
             groupBox1 = new GroupBox();
+            ck_pic = new CheckBox();
             num_id = new NumericUpDown();
             button2 = new Button();
             label6 = new Label();
@@ -197,6 +198,7 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(ck_pic);
             groupBox1.Controls.Add(num_id);
             groupBox1.Controls.Add(button2);
             groupBox1.Controls.Add(label6);
@@ -216,9 +218,21 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "输出";
             // 
+            // ck_pic
+            // 
+            ck_pic.AutoSize = true;
+            ck_pic.Checked = true;
+            ck_pic.CheckState = CheckState.Checked;
+            ck_pic.Location = new Point(83, 29);
+            ck_pic.Name = "ck_pic";
+            ck_pic.Size = new Size(111, 21);
+            ck_pic.TabIndex = 17;
+            ck_pic.Text = "测试格式化碎图";
+            ck_pic.UseVisualStyleBackColor = true;
+            // 
             // num_id
             // 
-            num_id.Location = new Point(195, 54);
+            num_id.Location = new Point(196, 52);
             num_id.Maximum = new decimal(new int[] { 256, 0, 0, 0 });
             num_id.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             num_id.Name = "num_id";
@@ -315,7 +329,7 @@
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(82, 57);
+            label9.Location = new Point(83, 55);
             label9.Name = "label9";
             label9.Size = new Size(113, 17);
             label9.TabIndex = 5;
@@ -427,5 +441,6 @@
         private Label lb_log;
         private NumericUpDown num_id;
         private Button btn_all;
+        private CheckBox ck_pic;
     }
 }
