@@ -477,15 +477,16 @@ namespace zy_996map
                 using (var fs = new FileStream(binaryFilePath, FileMode.Create, FileAccess.Write))
                 using (var writer = new BinaryWriter(fs))
                 {
-                    ushort width = (ushort)mapGrid[0].Length;
-                    ushort height = (ushort)mapGrid.Length;
+                    //1003*800时，996服务器加载不了。所以这时限制1000以内
+                    ushort width = (ushort)Math.Clamp(mapGrid[0].Length, 0, 1000);
+                    ushort height = (ushort)Math.Clamp(mapGrid.Length, 0, 1000);
                     //头文件 
                     //宽
                     writer.Write(width);
                     //高
                     writer.Write(height);
                     byte[] titleBytes = new byte[16];
-                    Encoding.ASCII.GetBytes("传奇地图").CopyTo(titleBytes, 0);
+                    Encoding.ASCII.GetBytes("123abcABC").CopyTo(titleBytes, 0);
                     //标题
                     writer.Write(titleBytes);
                     //日期
@@ -556,7 +557,7 @@ namespace zy_996map
         {
             string bigImageName = Path.GetFileNameWithoutExtension(imagePath);
             int scale = 2;
-            var cutSize = new Size(48, 32) * scale;
+            var cutSize = new Size(48, 32);
             mapDate.Version = 14;//12 14 数据字节数  只有obj就可以是12
             mapDate.Width = (ushort)mapIndex[0].Length;
             mapDate.Height = (ushort)mapIndex.Length;
@@ -568,7 +569,7 @@ namespace zy_996map
                 {//阻挡设置
                     mapDate.Matrix[i][j] = new MapCell();
                     mapDate.Matrix[i][j].BkImg = (ushort)(mapIndex[i][j] * 32768);
-                    // mapDate.Matrix[i][j].FrImg = (ushort)(mapIndex[i][j] * 32768);
+                    mapDate.Matrix[i][j].FrImg = (ushort)(mapIndex[i][j] * 32768);
                 }
             }
 
@@ -581,12 +582,14 @@ namespace zy_996map
 
             try
             {
+
                 // 使用Magick.NET处理大图像
                 using (var originalImage = new MagickImage())
                 {
                     // 设置读取大图像的选项，避免一次性加载到内存
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-memory", "1GiB");
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-map", "2GiB");
+
 
                     // 读取图像
                     originalImage.Read(imagePath);
@@ -599,54 +602,27 @@ namespace zy_996map
                     // 计算需要切割的行列数（向上取整，确保覆盖整个原图）
                     int colCount = (int)Math.Ceiling((double)originalWidth / cutSize.Width); // 列数（横向切割数）
                     int rowCount = (int)Math.Ceiling((double)originalHeight / cutSize.Height); // 行数（纵向切割数）
-
                     int tileTotal = colCount * rowCount;
+
                     //const int objCount = 32767;
-                    const int smtileCount = 65535;
+                    const int smtileCount = 65534;
                     const int tileCount = 32767;
 
-
-                    //tpye 1 objs count
-                    if (tileTotal <= tileCount)
+                    for (int i = 2; i < 20; i+=2)
                     {
-                        mapDate.Version = 14;
-                        Form1.AddLog($"------ 一档 ({tileTotal}/{tileCount})----- scale:{scale}", Color.Green);
-                    }
-                    else if (tileTotal <= tileCount + smtileCount)
-                    {
-                        mapDate.Version = 14;
-                        Form1.AddLog($"------ 二档 ({tileTotal}/{tileCount + smtileCount})----- scale:{scale}", Color.Green);
-                    }
-                    else
-                    {
-                        scale *= 2;
-                        mapDate.Version = 14;
-                        cutSize = new Size(cutSize.Width * scale, cutSize.Height * scale);
-                        colCount = (int)Math.Ceiling((double)originalWidth / cutSize.Width); // 列数（横向切割数）
-                        rowCount = (int)Math.Ceiling((double)originalHeight / cutSize.Height); // 行数（纵向切割数）
+                        var size = new Size(cutSize.Width * i, cutSize.Height * i);
+                        // 计算需要切割的行列数（向上取整，确保覆盖整个原图）
+                        colCount = (int)Math.Ceiling((double)originalWidth / size.Width); // 列数（横向切割数）
+                        rowCount = (int)Math.Ceiling((double)originalHeight / size.Height); // 行数（纵向切割数）
                         tileTotal = colCount * rowCount;
-                        if (tileTotal <= tileCount)
+                        //tpye 1 objs count
+                        if (tileTotal <= tileCount + smtileCount)
                         {
-                            mapDate.Version = 14;
-                            Form1.AddLog($"------四档 ({tileTotal}/{smtileCount + tileCount})----- scale:{scale}", Color.Green);
+                            cutSize = size;
+                            scale = i;
+                            Form1.AddLog($"------({tileTotal}/{tileCount})---  size:{size}-- scale:{scale}", Color.Green);
+                            break;
                         }
-                        else if (tileTotal <= smtileCount + tileCount)
-                        {
-                            mapDate.Version = 14;
-                            Form1.AddLog($"------五档 ({tileTotal}/{smtileCount + tileCount})----- scale:{scale}", Color.Green);
-                        }
-                        else
-                        {
-                            mapDate.Version = 14;
-                            scale *= 2;
-                            cutSize = new Size(cutSize.Width * scale, cutSize.Height * scale);
-                            colCount = (int)Math.Ceiling((double)originalWidth / cutSize.Width); // 列数（横向切割数）
-                            rowCount = (int)Math.Ceiling((double)originalHeight / cutSize.Height); // 行数（纵向切割数）
-                            tileTotal = colCount * rowCount;
-
-                            Form1.AddLog($"------六档 ({tileTotal}/{smtileCount + tileCount})----- scale:{scale}", Color.Green);
-                        }
-
                     }
 
                     Form1.AddLog($"重新切大图 ({colCount},{rowCount})   scale {scale} mapDate.Version:{mapDate.Version} {imagePath}", Color.Green);
@@ -709,7 +685,7 @@ namespace zy_996map
                                         if (imageIndex % 1000 == 0)
                                             Form1.AddLog($"11已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
                                         int indexP = imageIndex + 1;
-                                        string picName = $"{imageIndex}.png";
+                                        string picName = $"{indexP - 1}.png";
                                         if (Form1.isDebuge)
                                             picName = $"tiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
                                         picDir = Path.Combine(imageDir, $"tiles{Form1.code_id + 1}");
@@ -728,10 +704,10 @@ namespace zy_996map
                                         if (imageIndex % 1000 == 0)
                                             Form1.AddLog($"22已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
 
-                                        int indexP = imageIndex - imageIndex1;
-                                        string picName = $"{imageIndex}.png";
+                                        int indexP = imageIndex - imageIndex1 + 1;
+                                        string picName = $"{indexP - 1}.png";
                                         if (Form1.isDebuge)
-                                            picName = $"smtiles{Form1.code_id + 1}_{(indexP).ToString("D6")}.png";
+                                            picName = $"smtiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
                                         picDir = Path.Combine(imageDir, $"smtiles{Form1.code_id + 1}");
                                         savePath = Path.Combine(picDir, picName);
 
@@ -740,6 +716,7 @@ namespace zy_996map
                                             mapDate.Matrix[orRow][orCol].AreaMid = (byte)Form1.code_id;
                                             mapDate.Matrix[orRow][orCol].MidImg = (ushort)(indexP);
                                         }
+                                       
                                         imageIndex2++;
 
                                     }

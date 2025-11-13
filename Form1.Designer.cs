@@ -67,7 +67,7 @@
             // 
             // btn_go
             // 
-            btn_go.Location = new Point(404, 94);
+            btn_go.Location = new Point(6, 71);
             btn_go.Name = "btn_go";
             btn_go.Size = new Size(107, 46);
             btn_go.TabIndex = 0;
@@ -142,7 +142,7 @@
             group_map.Controls.Add(label3);
             group_map.Controls.Add(txt_ver);
             group_map.Controls.Add(lb_version);
-            group_map.Location = new Point(9, 0);
+            group_map.Location = new Point(142, 0);
             group_map.Name = "group_map";
             group_map.Size = new Size(775, 162);
             group_map.TabIndex = 6;

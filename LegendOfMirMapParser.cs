@@ -187,12 +187,16 @@ namespace zy_996map
                         s += "\n";
                     }
                     var c = mapData.Matrix[y][x];
-                    if (c.AreaMid > 0&& z<6)
+                    //if (c.AreaMid > 0&& z<6)
+                    if (z < 6&&y==0)
                     {
-                        Console.WriteLine($"{y},{x}  bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
-                        z++;
+                        Console.WriteLine($"{x},{y}  bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                       
                     }
+                    if(z >= 6)
+                    { return; }
                 }
+                z++;
             }
            // Console.WriteLine(s);
             if (true)
@@ -203,6 +207,9 @@ namespace zy_996map
                 Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
                 c = mapData.Matrix[0][2];
                 Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+                c = mapData.Matrix[0][3];
+                Console.WriteLine($"bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
+
                 c = mapData.Matrix[35][26];
                 Console.WriteLine($"{35},{26} bg:{c.BkImg} mid:{c.MidImg} front:{c.FrImg} doorIndex:{c.DoorIndex} doorOff:{c.DoorOffset} aniF:{c.AniFrame} aniT:{c.AniTick} Area:{c.Area} Light:{c.Light}  ext1:{c.AreaBk} ext2:{c.AreaMid}");
                 c = mapData.Matrix[32][32];
