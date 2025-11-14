@@ -303,7 +303,7 @@ namespace zy_996map
                     Cfg_Map cfg;
                     if (!config.Items.TryGetValue(k.ToString(), out cfg))
                     {
-                        // Form1.AddLog($"配置表不存在 ID：{k}", Color.Red);
+                        // Form1.AddLog($"配置表不存在 ID：{k}", Color.Red); 
                         continue;
                     }
                     MapData m;
