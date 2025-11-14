@@ -67,7 +67,7 @@
             // 
             // btn_go
             // 
-            btn_go.Location = new Point(6, 71);
+            btn_go.Location = new Point(15, 71);
             btn_go.Name = "btn_go";
             btn_go.Size = new Size(107, 46);
             btn_go.TabIndex = 0;
@@ -119,9 +119,9 @@
             groupTest.Controls.Add(txt_input);
             groupTest.Controls.Add(label1);
             groupTest.Controls.Add(btn_go);
-            groupTest.Location = new Point(9, 16);
+            groupTest.Location = new Point(10, 10);
             groupTest.Name = "groupTest";
-            groupTest.Size = new Size(594, 312);
+            groupTest.Size = new Size(133, 152);
             groupTest.TabIndex = 5;
             groupTest.TabStop = false;
             groupTest.Text = "测试";
@@ -144,7 +144,7 @@
             group_map.Controls.Add(lb_version);
             group_map.Location = new Point(142, 0);
             group_map.Name = "group_map";
-            group_map.Size = new Size(775, 162);
+            group_map.Size = new Size(652, 162);
             group_map.TabIndex = 6;
             group_map.TabStop = false;
             group_map.Text = "来源";
@@ -152,7 +152,7 @@
             // btn_openImage
             // 
             btn_openImage.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btn_openImage.Location = new Point(694, 81);
+            btn_openImage.Location = new Point(571, 81);
             btn_openImage.Name = "btn_openImage";
             btn_openImage.Size = new Size(75, 23);
             btn_openImage.TabIndex = 4;
@@ -165,7 +165,7 @@
             txt_input_image.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txt_input_image.Location = new Point(98, 82);
             txt_input_image.Name = "txt_input_image";
-            txt_input_image.Size = new Size(590, 23);
+            txt_input_image.Size = new Size(467, 23);
             txt_input_image.TabIndex = 3;
             txt_input_image.TextChanged += txt_input_image_TextChanged;
             // 
