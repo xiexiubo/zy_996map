@@ -556,6 +556,7 @@ namespace zy_996map
         public static bool CutBigPix(string imagePath, string pathOut, MapData mapDate, int[][] mapIndex)
         {
             string bigImageName = Path.GetFileNameWithoutExtension(imagePath);
+            string bigImageDir = imagePath.Replace(".jpg", "");//Path.GetDirectoryName(imagePath);
             int scale = 2;
             var cutSize = new Size(48, 32);
             mapDate.Version = 14;//12 14 数据字节数  只有obj就可以是12
@@ -573,31 +574,46 @@ namespace zy_996map
                 }
             }
 
+            bool isH5Images = true;
             // 检查文件是否存在
-            if (!File.Exists(imagePath))
-            {
-                Form1.AddLog($"[error]图片文件不存在: {imagePath}", Color.Red);
-                return false;
-            }
-
+            //if (!File.Exists(imagePath))
+            //{
+            //    Form1.AddLog($"[error]图片文件不存在: {imagePath}  {Directory.Exists(bigImageDir)}  {File.Exists(Path.Combine(bigImageDir, "1.jpg"))}", Color.Red);
+            //    if (Directory.Exists(bigImageDir)&&File.Exists(Path.Combine(bigImageDir,"1.jpg")))
+            //    {
+            //        Form1.AddLog($"开启碎图片模式", Color.Red);
+            //        isH5Images = true;
+            //    }
+            //    else
+            //    {
+            //        Form1.AddLog($"没有源图资源 {imagePath}", Color.Red);
+            //        return false; 
+            //    }
+            //}
+            int colCountH5 = 0; // h5碎图每行数量
+            int rowCountH5 = 0; // h5碎图每列数量
+            int originalWidth = mapDate.Width * MAP_GRID_WIDTH;
+            int originalHeight = mapDate.Height * MAP_GRID_HEIGHT;
+            List<Rectangle> listH5 = new List<Rectangle>();
             try
             {
-
                 // 使用Magick.NET处理大图像
-                using (var originalImage = new MagickImage())
+                MagickImage originalImage = null;
+                if (!isH5Images)
                 {
+                    originalImage = new MagickImage();
                     // 设置读取大图像的选项，避免一次性加载到内存
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-memory", "1GiB");
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-map", "2GiB");
-
-
                     // 读取图像
                     originalImage.Read(imagePath);
+                    Form1.AddLog($"图像信息: {imagePath}, 宽度: {originalImage.Width}, 高度: {originalImage.Height}, 格式: {originalImage.Format}  isH5Images:{isH5Images}", Color.Green);
 
-                    Form1.AddLog($"图像信息: {imagePath}, 宽度: {originalImage.Width}, 高度: {originalImage.Height}, 格式: {originalImage.Format}", Color.Green);
+                }
 
-                    int originalWidth = mapDate.Width * MAP_GRID_WIDTH;
-                    int originalHeight = mapDate.Height * MAP_GRID_HEIGHT;
+                {
+                     //originalWidth = mapDate.Width * MAP_GRID_WIDTH;
+                    // originalHeight = mapDate.Height * MAP_GRID_HEIGHT;
 
                     // 计算需要切割的行列数（向上取整，确保覆盖整个原图）
                     int colCount = (int)Math.Ceiling((double)originalWidth / cutSize.Width); // 列数（横向切割数）
@@ -625,6 +641,82 @@ namespace zy_996map
                         }
                     }
 
+
+                    colCountH5 = (int)Math.Round((double)originalWidth / 512); // h5碎图每行数量
+                    double colCountH5_re = originalWidth % 512;
+                   
+                    rowCountH5 = (int)Math.Floor((double)originalHeight / 256); // h5碎图每列数量
+                    double rowCountH5_re = originalWidth % 256;
+
+                    if (colCountH5_re > 0 && rowCountH5_re > 0)
+                    {
+                        string tilePath = Path.Combine(bigImageDir, ((colCountH5 + 1) * (rowCountH5 + 1)).ToString() + ".jpg");
+                        if (File.Exists(tilePath))
+                        {
+                            colCountH5 += 1;
+                            rowCountH5 += 1;
+                        }
+                        else
+                        {
+                            tilePath = Path.Combine(bigImageDir, ((colCountH5 + 1) * (rowCountH5)).ToString() + ".jpg");
+
+                            if (File.Exists(tilePath))
+                            {
+                                colCountH5 += 1;
+                            }
+                            else
+                            {
+                                tilePath = Path.Combine(bigImageDir, ((colCountH5) * (rowCountH5 + 1)).ToString() + ".jpg");
+
+                                if (File.Exists(tilePath))
+                                {
+                                    rowCountH5 += 1;
+                                }
+
+                            }
+                        }
+
+                    }
+                    else if (colCountH5_re > 0) 
+                    {
+                      string  tilePath = Path.Combine(bigImageDir, ((colCountH5 + 1) * (rowCountH5)).ToString() + ".jpg");
+
+                        if (File.Exists(tilePath))
+                        {
+                            colCountH5 += 1;
+                        }
+                    }
+                    else if (rowCountH5_re > 0)
+                    {
+                        string tilePath = Path.Combine(bigImageDir, ((colCountH5) * (rowCountH5+1)).ToString() + ".jpg");
+
+                        if (File.Exists(tilePath))
+                        {
+                            colCountH5 += 1;
+                        }
+                    }
+              
+                    listH5 = new List<Rectangle>();
+                    if (isH5Images)
+                    {
+                        for (int row = 0; row < rowCountH5; row++)
+                        {
+                            for (int col = 0; col < colCountH5; col++)
+                            {
+                                int srcX = col * 512; // 原图中X坐标起点
+                                int srcY = row * 256; // 原图中Y坐标起点
+
+                                // 实际要绘制的宽度（避免超出原图范围）
+                                int drawWidth = Math.Min(512, originalWidth - srcX);
+                                // 实际要绘制的高度（避免超出原图范围）
+                                int drawHeight = Math.Min(256, originalHeight - srcY);
+
+                                listH5.Add(new Rectangle(srcX, srcY, drawWidth, drawHeight));
+                            }
+                        }
+                    }
+
+
                     Form1.AddLog($"重新切大图 ({colCount},{rowCount})   scale {scale} mapDate.Version:{mapDate.Version} {imagePath}", Color.Green);
                     int imageIndex = 0;
                     int imageIndex1 = 0;
@@ -645,120 +737,218 @@ namespace zy_996map
                                 // 实际要绘制的高度（避免超出原图范围）
                                 int drawHeight = Math.Min(cutSize.Height, originalHeight - srcY);
 
-                                // 创建新的小图像（背景为黑色）
-                                using (var smallImage = new MagickImage(MagickColors.Black, cutSize.Width, cutSize.Height))
+
+                                //obj28  // smtiles123 //tiles147
+                                // 保存小图（路径格式：输出文件夹/索引.png）
+                                var imageDir = Path.Combine(pathOut, $"{bigImageName}");
+                                if (Form1.isDebuge)
+                                    imageDir = pathOut;//Path.Combine(pathOut, $"{bigImageName}");
+                                var picDir = Path.Combine(imageDir, $"obj{Form1.code_id + 1}");
+                                string savePath = "";
+
+                                // 计算原始索引
+                                int originalIndex = row * mapDate.Width + col * scale;
+                                int orRow = row * scale;
+                                int orCol = col * scale;
+
+                                int orImageIndex = orRow * mapDate.Width + orCol;
+                                //int  imageIndex = row * colCount + col;
+                                //int  imageIndex = row * colCount + col;
+
+
+                                if (imageIndex < tileCount)   //大地砖
                                 {
-                                    // 如果有实际内容要绘制
-                                    if (drawWidth > 0 && drawHeight > 0)
-                                    {
-                                        // 使用Clone方法创建原图的裁剪区域
-                                        using (var croppedImage = originalImage.Clone())
-                                        {
-                                            // 设置裁剪区域
-                                            croppedImage.Crop(new MagickGeometry(srcX, srcY, drawWidth, drawHeight));
-
-                                            // 将裁剪的图像绘制到黑色背景上
-                                            smallImage.Composite(croppedImage, 0, 0, CompositeOperator.Over);
-                                        }
-                                    }
-
-                                    //obj28  // smtiles123 //tiles147
-                                    // 保存小图（路径格式：输出文件夹/索引.png）
-                                    var imageDir = Path.Combine(pathOut, $"{bigImageName}");
+                                    if (imageIndex % 1000 == 0)
+                                        Form1.AddLog($"11已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                    int indexP = imageIndex + 1;
+                                    string picName = $"{indexP - 1}.png";
                                     if (Form1.isDebuge)
-                                        imageDir = pathOut;//Path.Combine(pathOut, $"{bigImageName}");
-                                    var picDir = Path.Combine(imageDir, $"obj{Form1.code_id + 1}");
-                                    string savePath = "";
+                                        picName = $"tiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
+                                    picDir = Path.Combine(imageDir, $"tiles{Form1.code_id + 1}");
+                                    savePath = Path.Combine(picDir, picName);
 
-                                    // 计算原始索引
-                                    int originalIndex = row * mapDate.Width + col * scale;
-                                    int orRow = row * scale;
-                                    int orCol = col * scale;
-
-                                    int orImageIndex = orRow * mapDate.Width + orCol;
-                                    //int  imageIndex = row * colCount + col;
-                                    //int  imageIndex = row * colCount + col;
-
-
-                                    if (imageIndex < tileCount)   //大地砖
+                                    if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
                                     {
-                                        if (imageIndex % 1000 == 0)
-                                            Form1.AddLog($"11已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
-                                        int indexP = imageIndex + 1;
-                                        string picName = $"{indexP - 1}.png";
-                                        if (Form1.isDebuge)
-                                            picName = $"tiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
-                                        picDir = Path.Combine(imageDir, $"tiles{Form1.code_id + 1}");
-                                        savePath = Path.Combine(picDir, picName);
-
-                                        if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
-                                        {
-                                            mapDate.Matrix[orRow][orCol].BkImg = (ushort)(mapDate.Matrix[orRow][orCol].BkImg + indexP);
-                                            mapDate.Matrix[orRow][orCol].AreaBk = (byte)Form1.code_id;
-                                        }
-                                        imageIndex1++;
+                                        mapDate.Matrix[orRow][orCol].BkImg = (ushort)(mapDate.Matrix[orRow][orCol].BkImg + indexP);
+                                        mapDate.Matrix[orRow][orCol].AreaBk = (byte)Form1.code_id;
                                     }
-                                    else if (imageIndex < tileCount + smtileCount) //smtile
-                                                                                   //else if (imageIndex < 200) //smtile
+                                    imageIndex1++;
+                                }
+                                else if (imageIndex < tileCount + smtileCount) //smtile
+                                {
+                                    if (imageIndex % 1000 == 0)
+                                        Form1.AddLog($"22已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+
+                                    int indexP = imageIndex - imageIndex1 + 1;
+                                    string picName = $"{indexP - 1}.png";
+                                    if (Form1.isDebuge)
+                                        picName = $"smtiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
+                                    picDir = Path.Combine(imageDir, $"smtiles{Form1.code_id + 1}");
+                                    savePath = Path.Combine(picDir, picName);
+
+                                    if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
                                     {
-                                        if (imageIndex % 1000 == 0)
-                                            Form1.AddLog($"22已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                        mapDate.Matrix[orRow][orCol].AreaMid = (byte)Form1.code_id;
+                                        mapDate.Matrix[orRow][orCol].MidImg = (ushort)(indexP);
+                                    }
 
-                                        int indexP = imageIndex - imageIndex1 + 1;
-                                        string picName = $"{indexP - 1}.png";
-                                        if (Form1.isDebuge)
-                                            picName = $"smtiles{Form1.code_id + 1}_{(indexP - 1).ToString("D6")}.png";
-                                        picDir = Path.Combine(imageDir, $"smtiles{Form1.code_id + 1}");
-                                        savePath = Path.Combine(picDir, picName);
+                                    imageIndex2++;
 
-                                        if (orRow < mapDate.Matrix.Length && orCol < mapDate.Matrix[orRow].Length)
+                                }
+                                else
+                                {
+                                    Form1.AddLog($"[error] 4已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图", Color.Green);
+                                    //continue;
+                                    if (originalImage != null)
+                                        originalImage.Dispose();
+                                    return false;
+                                }
+                                // 创建输出文件夹（若不存在）
+                                if (!Directory.Exists(picDir))
+                                {
+                                    Directory.CreateDirectory(picDir);
+                                }
+                                //小图拼切
+                                if (isH5Images)
+                                {
+                                    Rectangle rectTargert = new Rectangle(srcX, srcY, drawWidth, drawHeight);
+                                    List<KeyValuePair<int, Rectangle>> listDimages =new List<KeyValuePair<int, Rectangle>>();
+                                    for (int i = 0; i < listH5.Count; i++) 
+                                    {
+                                        var rect = listH5[i];
+                                        if (rect.IntersectsWith(rectTargert)) 
                                         {
-                                            mapDate.Matrix[orRow][orCol].AreaMid = (byte)Form1.code_id;
-                                            mapDate.Matrix[orRow][orCol].MidImg = (ushort)(indexP);
+                                            Rectangle rectIn =  Rectangle.Intersect(listH5[i], rectTargert);
+                                            listDimages.Add(new KeyValuePair<int, Rectangle>(i,rectIn));// (i,rectIn);
                                         }
                                        
-                                        imageIndex2++;
-
                                     }
-                                    else
+                                    if (listDimages.Count > 1)
                                     {
-                                        Form1.AddLog($"[error] 4已处理阻挡格{orImageIndex}/{mapDate.Width * mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图", Color.Green);
-                                        //continue;
-                                        return false;
+                                        listDimages.Sort((a,b) => a.Key - b.Key);
                                     }
-
-
-
-
-
-                                    // 创建输出文件夹（若不存在）
-                                    if (!Directory.Exists(picDir))
+                             
+                                    
+                                    using (Bitmap outBmp = new Bitmap(drawWidth, drawHeight, PixelFormat.Format24bppRgb))
+                                    using (Graphics g = Graphics.FromImage(outBmp))
                                     {
-                                        Directory.CreateDirectory(picDir);
+
+
+                                        //设置高质量绘制
+                                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;// System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                        g.Clear(Color.Black); // 清除画布
+
+                                        int idex = 0;
+                                        KeyValuePair<int, Rectangle> lastItem=new KeyValuePair<int, Rectangle>();
+                                        // 处理每个文件                                       
+                                        for (int i = 0; i < listDimages.Count; i++)
+                                        {
+                                            KeyValuePair<int, Rectangle> item = listDimages[i];
+                                            string tilePath = Path.Combine(bigImageDir, (item.Key + 1).ToString() + ".jpg");
+                                            Image imgagetile = new Bitmap(512, 256);
+
+                                            if (File.Exists(tilePath))
+                                            {
+                                                var tileFs = new FileStream(tilePath, FileMode.Open, FileAccess.Read);
+                                                imgagetile = Image.FromStream(tileFs);
+                                                tileFs.Dispose();
+                                            }
+
+                                            // 计算来源切片位置
+                                            int sX = item.Value.X % 512;
+                                            int sY = item.Value.Y % 256;
+
+                                            // 计目标较长切片位置
+                                            int dX = 0;
+                                            int dY = 0;
+                                            if (listDimages.Count == 2)
+                                            {
+                                                if (idex > 0 && (item.Key == lastItem.Key + 1))
+                                                {
+                                                    dX = lastItem.Value.Size.Width;
+                                                    dY = 0;
+                                                }
+                                                if (idex > 0 && (item.Key > lastItem.Key + 1))
+                                                {
+                                                    dX = 0;
+                                                    dY = lastItem.Value.Size.Height;
+                                                }
+                                            }
+                                            if (listDimages.Count == 4) 
+                                            {
+                                                if (idex == 1) 
+                                                {
+                                                    dX = listDimages[0].Value.Size.Width;
+                                                    dY = 0;
+                                                } else if (idex == 2) 
+                                                {
+                                                    dX = 0;
+                                                    dY = listDimages[0].Value.Size.Height;
+                                                } else if (idex == 2) 
+                                                {
+                                                    dX = listDimages[0].Value.Size.Width;
+                                                    dY = listDimages[0].Value.Size.Height;
+                                                }
+
+
+                                            }
+                                           
+
+
+                                            // 确保不超出目标图像边界
+                                            int w = Math.Min(item.Value.Width, imgagetile.Width - sX);
+                                            int h = Math.Min(item.Value.Height, imgagetile.Height - sY);
+                                            //public void DrawImage(Image image, Rectangle destRect, Rectangle srcRect, GraphicsUnit srcUnit)
+                                            if (drawWidth > 0 && drawHeight > 0)
+                                            {
+                                                g.DrawImage(imgagetile, new Rectangle(dX, dY, w, h), new Rectangle(sX, sY, w, h),GraphicsUnit.Pixel);
+                                            }
+
+                                            imgagetile.Dispose();
+                                            idex++;
+                                            lastItem = item;
+                                        }
+
+                                        outBmp.Save(savePath, ImageFormat.Png);
                                     }
-
-                                    // 保存图像
-                                    // if (orImageIndex >= objCount)
-                                    smallImage.Write(savePath, MagickFormat.Png24);
-
-                                    // 每处理100个小图输出一次进度
-                                    //if (imageIndex % 1000 == 0)
+                                }
+                                else
+                                {
+                                    // 创建新的小图像（背景为黑色）
+                                    using (var smallImage = new MagickImage(MagickColors.Black, cutSize.Width, cutSize.Height))
                                     {
-                                        //Form1.AddLog($"已处理阻挡格{orImageIndex}/{mapDate.Width* mapDate.Height} 图片格{imageIndex}/{tileTotal} 个小图 {savePath}", Color.Green);
+                                        // 如果有实际内容要绘制
+                                        if (drawWidth > 0 && drawHeight > 0)
+                                        {
+                                            // 使用Clone方法创建原图的裁剪区域
+                                            using (var croppedImage = originalImage.Clone())
+                                            {
+                                                // 设置裁剪区域
+                                                croppedImage.Crop(new MagickGeometry(srcX, srcY, drawWidth, drawHeight));
+
+                                                // 将裁剪的图像绘制到黑色背景上
+                                                smallImage.Composite(croppedImage, 0, 0, CompositeOperator.Over);
+                                            }
+                                        }                                       
+                                        // 保存图像
+                                        smallImage.Write(savePath, MagickFormat.Png24);
                                     }
-                                    //Form1.AddLog($"图像切割完成，共生成 {imageIndex} 个小图", Color.Green);
                                 }
                             }
                             catch (Exception ex)
                             {
                                 Form1.AddLog($"处理小图时出错 (行: {row}, 列: {col}): {ex.Message}", Color.Red);
+                                if (originalImage != null)
+                                    originalImage.Dispose();
                                 return false;
                             }
                             imageIndex++;
                         }
                     }
 
-
+                    if (originalImage != null)
+                        originalImage.Dispose();
                 }
             }
             catch (Exception ex)
