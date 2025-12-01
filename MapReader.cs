@@ -103,15 +103,13 @@ namespace zy_996map
         {
             string imageName = Path.GetFileNameWithoutExtension(imgPath);
             var mapPath = Path.Combine(directory, imageName, $"{imageName}.map");
+            var miniMapPath = Path.Combine(directory, imageName, $"{imageName}.jpg");
+           
             if (Form1.isDebuge)
             {
                 mapPath = Path.Combine(directory, $"{imageName}.map");
             }
-            if (File.Exists(mapPath))
-            {
-                Form1.AddLog($"已经存在的.map文件，跳过{mapPath}");
-                return true;
-            }
+         
 
             Dictionary<int, MapData> mapDatas = new Dictionary<int, MapData>();
             Root_map config = null;
@@ -152,7 +150,7 @@ namespace zy_996map
                     if (item.Value.img.ToString() == imageName)
                     {
                         cfg = item.Value;
-                        //break;
+                        break;
                     }
                     // if(item.Value.img!=item.Value.data)
                     // Form1.AddLog($" 不一样的data和imgs ID：{item.Value.Id}  img：{item.Value.img}  item.Value.data：{item.Value.data}", Color.Red);
@@ -165,6 +163,48 @@ namespace zy_996map
             }
 
             await Task.Delay(15);
+            bool isDownMiniMap = true;
+            if (isDownMiniMap&&!Form1.isDebuge)
+            {
+               
+                string subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{imageName}.jpg?ver=1.0.1";
+
+                if (!File.Exists(miniMapPath))
+                {
+                    var miniMapPathor = imgPath.Replace("map", "minimap");
+                    if (File.Exists(miniMapPathor))
+                    {
+                        File.Copy(miniMapPathor, miniMapPath);
+                    }
+                    else
+                    {
+                        Form1.AddLog($"下载Minimap图{miniMapPath}");
+                        bool b = await DownloadFileAsync(subUrl, miniMapPath);
+                        //if (!b)
+                        //{
+                        //    subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{cfg.data}.jpg?ver=1.0.1";
+                        //    b = await DownloadFileAsync(subUrl, miniMapPath);
+                        //    if (!b)
+                        //    {
+                        //        subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{cfg.Id}.jpg?ver=1.0.1";
+                        //        DownloadFileAsync(subUrl, miniMapPath);
+                        //    }
+                        //}
+                    }
+
+                }
+                else
+                {
+                    Form1.AddLog($"跳过已经有Minimap图{miniMapPath}");
+                    Form1.AddLog($"下载Minimap图{miniMapPath}");
+                }       
+            }
+            if (File.Exists(mapPath))
+            {
+                Form1.AddLog($"已经存在的.map文件，跳过{mapPath}");
+                return true;
+            }
+
             byte[] data = null;
             try
             {
@@ -614,10 +654,11 @@ namespace zy_996map
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-memory", "1GiB");
                     originalImage.Settings.SetDefine(MagickFormat.Png, "limit-map", "2GiB");
                     // 读取图像
-                    originalImage.Read(imagePath);
-                    Form1.AddLog($"图像信息: {imagePath}, 宽度: {originalImage.Width}, 高度: {originalImage.Height}, 格式: {originalImage.Format}  isH5Images:{isH5Images}", Color.Green);
+                    originalImage.Read(imagePath);                   
 
                 }
+
+                Form1.AddLog($"图像信息: {imagePath}, 宽度: {originalImage.Width}, 高度: {originalImage.Height}, 格式: {originalImage.Format}  isH5Images:{isH5Images}", Color.Green);
 
                 {
                      //originalWidth = mapDate.Width * MAP_GRID_WIDTH;
@@ -1006,5 +1047,108 @@ namespace zy_996map
             }
         }
         #endregion
+
+        // 下载文件并保存到指定目录
+        private async static Task<bool> DownloadFileAsync(string url, string savePath, bool isDeletExists = false)
+        {
+            try
+            {
+
+                if (File.Exists(savePath))
+                {
+                    if (isDeletExists)
+                    {
+                        File.Delete(savePath);
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                using (var httpClient = new HttpClient())
+                {
+                    // 设置超时时间（可选）
+                    httpClient.Timeout = TimeSpan.FromMinutes(5);
+
+                    // 发送HTTP请求并获取响应流
+                    using (HttpResponseMessage response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                    {
+                        // 确保请求成功
+                        //response.EnsureSuccessStatusCode();
+
+
+                        // 修改为：不主动抛出异常，改为手动判断状态码
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            //Instance.AddLog($"请求失败: {url}，状态码: {response.StatusCode}", Color.Red);
+                            Console.WriteLine($"请求失败: {url}，状态码: {response.StatusCode}");
+                            return false; // 直接返回，不继续处理，也不抛出异常
+                        }
+                        // 创建保存目录（如果不存在）
+                        string directory = Path.GetDirectoryName(savePath);
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+
+
+                        // 获取文件总大小（用于进度显示）
+                        long? contentLength = response.Content.Headers.ContentLength;
+
+                        // 打开文件流准备写入
+                        using (Stream contentStream = await response.Content.ReadAsStreamAsync())
+                        using (FileStream fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            // 如果知道文件大小，显示下载进度
+                            if (contentLength.HasValue)
+                            {
+                                long totalBytesRead = 0;
+                                byte[] buffer = new byte[8192];
+                                int bytesRead;
+
+                                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                                {
+                                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+                                    totalBytesRead += bytesRead;
+
+                                    // 计算并显示进度（范围0-100）
+                                    double progress = (double)totalBytesRead / contentLength.Value * 100;
+                                }
+                            }
+                            else
+                            {
+                                // 不知道文件大小时，直接复制流
+                                await contentStream.CopyToAsync(fileStream);
+                            }
+                        }
+                    }
+                }
+
+                //MessageBox.Show($"文件已成功保存到: {savePath}", "下载完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                //MessageBox.Show($"下载失败: 网络错误 - {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Form1.AddLog($"下载失败: 网络错误 - {ex.Message}   {url}", Color.Red);
+                Console.WriteLine($"下载失败: 网络错误 - {ex.Message}  {url}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            catch (TaskCanceledException)
+            {
+                //MessageBox.Show("下载已取消或超时", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"下载已取消或超时    {url}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Form1.AddLog($"下载已取消或超时    {url}", Color.Red);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // MessageBox.Show($"下载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"下载失败: {ex.Message}     {url}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Form1.AddLog($"下载失败: {ex.Message}     {url}", Color.Red);
+                return false;
+            }
+        }
     }
 }
