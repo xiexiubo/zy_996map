@@ -58,42 +58,42 @@ namespace zy_996map
 
         static Dictionary<int, Size> dicConst = new Dictionary<int, Size>()
         {
-            { 154, new Size(512 * 93, 256 * 100) },
-            { 1025, new Size(512 * 5, 256 * 7) },
-            { 2701, new Size(512 * 13, 256 * 20) },
-            { 4902, new Size(512 * 9, 256 * 11) },
-            { 5002, new Size(512 * 37, 256 * 50) },
-            { 5003, new Size(512 * 37, 256 * 50) },
-            { 5005, new Size(512 * 37, 256 * 50) },
-            { 5562, new Size(512 * 14, 256 * 23) },
-            { 5563, new Size(512 * 26, 256 * 35) },
-            { 5564, new Size(512 * 14, 256 * 19) },
-            { 5565, new Size(512 * 12, 256 * 17) },
-            //{ 5564, new Size(512*5,256*7) }, // 注释掉的重复键
-            { 5566, new Size(512 * 18, 256 * 30) },
-            { 5567, new Size(512 * 7, 256 * 10) },
-            { 5568, new Size(512 * 7, 256 * 10) },
-            { 5569, new Size(512 * 7, 256 * 10) },
-            { 5570, new Size(512 * 10, 256 * 13) },
-            { 5571, new Size(512 * 15, 256 * 23) },
-            { 5572, new Size(512 * 15, 256 * 20) },
-            { 5573, new Size(512 * 5, 256 * 8) },
-            { 5574, new Size(512 * 19, 256 * 23) },
-            { 5592, new Size(512 * 22, 256 * 31) },
-            { 6110, new Size(512 * 21, 256 * 28) },
-            { 6211, new Size(512 * 16, 256 * 25) },
-            { 6213, new Size(512 * 19, 256 * 25) },
-            { 6217, new Size(512 * 37, 256 * 50) },
-            { 6224, new Size(512 * 28, 256 * 50) },
-            { 6242, new Size(512 * 28, 256 * 37) },
-            { 6259, new Size(512 * 9, 256 * 12) },
-            { 9401, new Size(512 * 37, 256 * 65) },
-            //{ 12558, new Size(512*18,256*7) }, // 注释掉的重复键
-            { 12558, new Size(512 * 6, 256 * 8) },
-            { 12574, new Size(512 * 7, 256 * 11) },
-            { 12582, new Size(512 * 7, 256 * 10) },
-            { 20000, new Size(512 * 20, 256 * 27) },
-            { 150000, new Size(512 * 8, 256 * 16) }
+            //{ 154, new Size(512 * 93, 256 * 100) },
+            //{ 1025, new Size(512 * 5, 256 * 7) },
+            //{ 2701, new Size(512 * 13, 256 * 20) },
+            //{ 4902, new Size(512 * 9, 256 * 11) },
+            //{ 5002, new Size(512 * 37, 256 * 50) },
+            //{ 5003, new Size(512 * 37, 256 * 50) },
+            //{ 5005, new Size(512 * 37, 256 * 50) },
+            //{ 5562, new Size(512 * 14, 256 * 23) },
+            //{ 5563, new Size(512 * 26, 256 * 35) },
+            //{ 5564, new Size(512 * 14, 256 * 19) },
+            //{ 5565, new Size(512 * 12, 256 * 17) },
+            ////{ 5564, new Size(512*5,256*7) }, // 注释掉的重复键
+            //{ 5566, new Size(512 * 18, 256 * 30) },
+            //{ 5567, new Size(512 * 7, 256 * 10) },
+            //{ 5568, new Size(512 * 7, 256 * 10) },
+            //{ 5569, new Size(512 * 7, 256 * 10) },
+            //{ 5570, new Size(512 * 10, 256 * 13) },
+            //{ 5571, new Size(512 * 15, 256 * 23) },
+            //{ 5572, new Size(512 * 15, 256 * 20) },
+            //{ 5573, new Size(512 * 5, 256 * 8) },
+            //{ 5574, new Size(512 * 19, 256 * 23) },
+            //{ 5592, new Size(512 * 22, 256 * 31) },
+            //{ 6110, new Size(512 * 21, 256 * 28) },
+            //{ 6211, new Size(512 * 16, 256 * 25) },
+            //{ 6213, new Size(512 * 19, 256 * 25) },
+            //{ 6217, new Size(512 * 37, 256 * 50) },
+            //{ 6224, new Size(512 * 28, 256 * 50) },
+            //{ 6242, new Size(512 * 28, 256 * 37) },
+            //{ 6259, new Size(512 * 9, 256 * 12) },
+            //{ 9401, new Size(512 * 37, 256 * 65) },
+            ////{ 12558, new Size(512*18,256*7) }, // 注释掉的重复键
+            ////{ 12558, new Size(512 * 6, 256 * 8) },
+            //{ 12574, new Size(512 * 7, 256 * 11) },
+            //{ 12582, new Size(512 * 7, 256 * 10) },
+            //{ 20000, new Size(512 * 20, 256 * 27) },
+            //{ 150000, new Size(512 * 8, 256 * 16) }
         };
         static int MAP_GRID_WIDTH = 48;
         static int MAP_GRID_HEIGHT = 32;
@@ -115,6 +115,7 @@ namespace zy_996map
 
             Dictionary<int, MapData> mapDatas = new Dictionary<int, MapData>();
             Root_map config = null;
+            Cfg_Map cfg = null;
 
             //读取配置表
             using (var httpClient = new HttpClient())
@@ -144,6 +145,22 @@ namespace zy_996map
                 {
                     return false;
                     throw new InvalidOperationException("配置文件内容为空或格式不正确");
+                }
+                
+                foreach (var item in config.Items)
+                {
+                    if (item.Value.img.ToString() == imageName)
+                    {
+                        cfg = item.Value;
+                        //break;
+                    }
+                    // if(item.Value.img!=item.Value.data)
+                    // Form1.AddLog($" 不一样的data和imgs ID：{item.Value.Id}  img：{item.Value.img}  item.Value.data：{item.Value.data}", Color.Red);
+                }
+                if (cfg == null)
+                {
+                    Form1.AddLog($"配置表不存在 imageID：{imageName}", Color.Red);
+                    return false;
                 }
             }
 
@@ -300,12 +317,7 @@ namespace zy_996map
                         Console.WriteLine($"读取数据不完整，期望: {dataLength}，实际: {bytesRead}");
                         break;
                     }
-                    Cfg_Map cfg;
-                    if (!config.Items.TryGetValue(k.ToString(), out cfg))
-                    {
-                        // Form1.AddLog($"配置表不存在 ID：{k}", Color.Red); 
-                        continue;
-                    }
+                   
                     MapData m;
                     if (!mapDatas.TryGetValue(k, out m))
                     {
@@ -315,25 +327,21 @@ namespace zy_996map
                     }
                 }
                 MapData mapData;
-                int key = int.Parse(imageName);
-                if (mapDatas.TryGetValue(int.Parse(imageName), out mapData))
+                if (mapDatas.TryGetValue((int)cfg.data, out mapData))
                 {
                     byte[] da = mapData.Data;
-                    Cfg_Map cfg;
-                    if (!config.Items.TryGetValue(key.ToString(), out cfg))
-                    {
-                        Form1.AddLog($"配置表不存在 ID：{key}", Color.Red);
-                        return false;
-                    }
+                   
+                   
 
                     int mapWidth = cfg.width;
                     int mapHeight = cfg.height;
                     Size size;
-                    if (dicConst.TryGetValue((int)key, out size))
+                    if (dicConst.TryGetValue((int)cfg.img, out size))
                     {
                         mapWidth = size.Width;
                         mapHeight = size.Height;
                     }
+                    Form1.AddLog($" 配置尺寸 ID：{cfg.Id}  cfg.w：{mapWidth}  cfg.w：{mapHeight}", Color.Red);
                     // 计算网格行列数
                     int cols = (int)Math.Ceiling(mapWidth / (double)MAP_GRID_WIDTH);
                     int rows = (int)Math.Ceiling(mapHeight / (double)MAP_GRID_HEIGHT);
@@ -438,24 +446,24 @@ namespace zy_996map
                             }
 
 
-                            Console.WriteLine($"地图 {key} 解析完成:pos {reader.BaseStream.Position}- length {reader.BaseStream.Length}");
+                            Console.WriteLine($"地图 {cfg.data} 解析完成:pos {reader.BaseStream.Position}- length {reader.BaseStream.Length}");
 
 
-                            Console.WriteLine($"地图 {key} 解析完成");
+                            Console.WriteLine($"地图 {cfg.data} 解析完成");
                             Console.WriteLine($"  - 网格: {_rowCount + 1}x{_colCount + 1}");
 
                         }
                     }
                     catch (Exception e)
                     {
-                        Form1.AddLog($"[error]读bin失败 {key} e:{e} ");
+                        Form1.AddLog($"[error]读bin失败 {cfg.data} e:{e} ");
                         return false;
                     }
 
                 }
                 else
                 {
-                    Form1.AddLog($"bin文件中不存在{key}");
+                    Form1.AddLog($"bin文件中不存在{cfg.data}");
                     return false;
                 }
 
@@ -574,22 +582,22 @@ namespace zy_996map
                 }
             }
 
-            bool isH5Images = true;
-            // 检查文件是否存在
-            //if (!File.Exists(imagePath))
-            //{
-            //    Form1.AddLog($"[error]图片文件不存在: {imagePath}  {Directory.Exists(bigImageDir)}  {File.Exists(Path.Combine(bigImageDir, "1.jpg"))}", Color.Red);
-            //    if (Directory.Exists(bigImageDir)&&File.Exists(Path.Combine(bigImageDir,"1.jpg")))
-            //    {
-            //        Form1.AddLog($"开启碎图片模式", Color.Red);
-            //        isH5Images = true;
-            //    }
-            //    else
-            //    {
-            //        Form1.AddLog($"没有源图资源 {imagePath}", Color.Red);
-            //        return false; 
-            //    }
-            //}
+            bool isH5Images = false;
+            //检查文件是否存在
+            if (!File.Exists(imagePath))
+            {
+                Form1.AddLog($"[error]图片文件不存在: {imagePath}  {Directory.Exists(bigImageDir)}  {File.Exists(Path.Combine(bigImageDir, "1.jpg"))}", Color.Red);
+                if (Directory.Exists(bigImageDir) && File.Exists(Path.Combine(bigImageDir, "1.jpg")))
+                {
+                    Form1.AddLog($"开启碎图片模式", Color.Red);
+                    isH5Images = true;
+                }
+                else
+                {
+                    Form1.AddLog($"没有源图资源 {imagePath}", Color.Red);
+                    return false;
+                }
+            }
             int colCountH5 = 0; // h5碎图每行数量
             int rowCountH5 = 0; // h5碎图每列数量
             int originalWidth = mapDate.Width * MAP_GRID_WIDTH;
