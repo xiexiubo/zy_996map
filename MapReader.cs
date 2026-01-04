@@ -174,6 +174,11 @@ namespace zy_996map
                     var miniMapPathor = imgPath.Replace("map", "minimap");
                     if (File.Exists(miniMapPathor))
                     {
+                        var dp = Path.GetDirectoryName(miniMapPath);
+                        if (!Path.Exists(dp)) 
+                        {
+                            Directory.CreateDirectory(dp);
+                        }
                         File.Copy(miniMapPathor, miniMapPath);
                     }
                     else
