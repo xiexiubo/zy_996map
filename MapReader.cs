@@ -686,7 +686,7 @@ namespace zy_996map
                         rowCount = (int)Math.Ceiling((double)originalHeight / size.Height); // 行数（纵向切割数）
                         tileTotal = colCount * rowCount;
                         //tpye 1 objs count
-                        if (tileTotal <= tileCount + smtileCount)
+                        if (tileTotal <= tileCount + smtileCount/2)
                         {
                             cutSize = size;
                             scale = i;
