@@ -97,7 +97,8 @@ namespace zy_996map
         };
         static int MAP_GRID_WIDTH = 48;
         static int MAP_GRID_HEIGHT = 32;
-
+        //static string URL_head = "https://cdn.ascq.zlm4.com/aoshi_20240419/";
+        static string URL_head = "https://cdn.hlxy.db9x.com/hlxy_20220117/";
         #region DoneRes_MapData
         public static async Task<bool> DoneRes_MapData(string imgPath, string directory)
         {
@@ -118,7 +119,7 @@ namespace zy_996map
             //读取配置表
             using (var httpClient = new HttpClient())
             {
-                var url = $"https://cdn.ascq.zlm4.com/aoshi_20240419/0config{Form1.Txt_ver}.json?v=20251017185057";
+                var url = $"{URL_head}0config{Form1.Txt_ver}.json?v=20251017185057";
                 // 发送HTTP请求并获取响应
                 HttpResponseMessage response = await httpClient.GetAsync(url);
 
@@ -137,7 +138,7 @@ namespace zy_996map
 
                 // 反序列化为配置对象
                 config = JsonConvert.DeserializeObject<Root_map>(json);
-                Console.WriteLine($"文件num: {config.Items.Count}");
+                //Console.WriteLine($"文件num: {config.Items.Count}");
                 Form1.AddLog($"-----Map conifg:{config.Items.Count}", Color.Green);
                 if (config == null)
                 {
@@ -167,7 +168,7 @@ namespace zy_996map
             if (isDownMiniMap&&!Form1.isDebuge)
             {
                
-                string subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{imageName}.jpg?ver=1.0.1";
+                string subUrl = $"{URL_head}assets/resource/minimap/{imageName}.jpg?ver=1.0.1";
 
                 if (!File.Exists(miniMapPath))
                 {
@@ -187,11 +188,11 @@ namespace zy_996map
                         bool b = await DownloadFileAsync(subUrl, miniMapPath);
                         //if (!b)
                         //{
-                        //    subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{cfg.data}.jpg?ver=1.0.1";
+                        //    subUrl = $"{URL_head}assets/resource/minimap/{cfg.data}.jpg?ver=1.0.1";
                         //    b = await DownloadFileAsync(subUrl, miniMapPath);
                         //    if (!b)
                         //    {
-                        //        subUrl = $"https://cdn.ascq.zlm4.com/aoshi_20240419/assets/resource/minimap/{cfg.Id}.jpg?ver=1.0.1";
+                        //        subUrl = $"{URL_head}assets/resource/minimap/{cfg.Id}.jpg?ver=1.0.1";
                         //        DownloadFileAsync(subUrl, miniMapPath);
                         //    }
                         //}
@@ -213,8 +214,8 @@ namespace zy_996map
             byte[] data = null;
             try
             {
-                string url = "https://cdn.ascq.zlm4.com/aoshi_20240419/map1.29318.3.dat?ver=1.0.1";
-                url = $"https://cdn.ascq.zlm4.com/aoshi_20240419/map{Form1.Txt_ver}.dat?ver=1.0.1";
+                string url = $"{URL_head}map{Form1.Txt_ver}.dat?ver=1.0.1";
+                url = $"{URL_head}map{Form1.Txt_ver}.dat?ver=1.0.1";
                 Form1.AddLog($"下载map.data");
                 using (var httpClient = new HttpClient())
                 {
@@ -299,8 +300,8 @@ namespace zy_996map
 
                     }
 
-                    Console.WriteLine($"完成mapdata解读 : {mapDatas.Count}");
-                    Form1.AddLog($"完成mapdata解读 : {mapDatas.Count}");
+                    //Console.WriteLine($"完成mapdata解读 : {mapDatas.Count}");
+                    //Form1.AddLog($"完成mapdata解读 : {mapDatas.Count}");
                 }
             }
             catch (HttpRequestException ex)
@@ -321,15 +322,23 @@ namespace zy_996map
             // 使用MemoryStream读取数据，尝试不同的字节序
             using (MemoryStream stream = new MemoryStream(data))
             {
+                bool useBigEndian = false; // 根据上面的测试确定
+                //盛世遮天
+                if (URL_head.Contains("cdn.hlxy.db9x.com")) 
+                {
+                    useBigEndian = true;
+                }
                 // 方法1: 尝试小端序
-                short count = ReadShort(stream, false);
+                short count = ReadShort(stream, useBigEndian);
                 Console.WriteLine($"小端序读取的地图数量：{count}");
 
+            
                 // 如果读取到负数，尝试大端序
                 if (count < 0)
                 {
                     stream.Position = 0;
                     count = ReadShort(stream, true);
+                    useBigEndian =true;
                     Console.WriteLine($"大端序读取的地图数量：{count}");
                 }
 
@@ -342,12 +351,13 @@ namespace zy_996map
                 }
 
                 // 使用正确的字节序读取剩余数据
-                bool useBigEndian = true; // 根据上面的测试确定
+                 useBigEndian = true; // 根据上面的测试确定
                 Form1.AddLog($"地图数据量：{count}");
                 for (int j = 0; j < count; j++)
                 {
                     int k = ReadInt(stream, useBigEndian);
                     int dataLength = ReadInt(stream, useBigEndian);
+                    Console.WriteLine($"地图数据量: {dataLength}，位置: {stream.Position}   {j}    {k}");
                     if (dataLength < 0 || dataLength > stream.Length - stream.Position)
                     {
                         Console.WriteLine($"错误的数据长度: {dataLength}，位置: {stream.Position}");
@@ -1040,7 +1050,7 @@ namespace zy_996map
             byte[] buffer = new byte[4];
             int bytesRead = stream.Read(buffer, 0, 4);
             if (bytesRead != 4)
-                throw new EndOfStreamException("无法读取足够的int数据");
+                throw new EndOfStreamException("无法读取足够的int数据 "+ bytesRead);
 
             if (bigEndian)
             {
