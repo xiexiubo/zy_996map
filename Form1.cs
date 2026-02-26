@@ -206,7 +206,7 @@ namespace zy_996map
             await Task.Delay(1000);
 
             var step9Start = DateTime.Now;
-            await Task.Run(() => MapReader.DoneRes_MapData(this.txt_input_image.Text, this.txt_output.Text));
+            await Task.Run(() => MapReader.DoneRes_MapData(this.txt_input_image.Text, this.txt_output.Text,this.txt_mapname.Text));
             var step9End = DateTime.Now;
             AddLog($"结束 解读生成.map，耗时：{(step9End - step9Start).TotalSeconds:F2}秒", Color.Green);
             // 启动资源管理器并指定目录
